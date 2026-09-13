@@ -104,9 +104,18 @@ export interface TelegramIntegrationState {
   connectionId: string;
   chatId: string;
 }
+export interface InstagramIntegrationState {
+  connected: boolean;
+  connectionId: string;
+  recipientId: string;
+  username: string | null;
+  lastInboundAt: string | null;
+  windowOpen: boolean;
+}
 export interface IntegrationsResponse {
   slack: SlackIntegrationState | null;
   telegram: TelegramIntegrationState | null;
+  instagram: InstagramIntegrationState | null;
 }
 
 export interface SlackStartResponse {
@@ -148,6 +157,7 @@ export interface PairingCodeResponse {
   expiresAt: string;
   deepLink: string;
 }
+export type InstagramPairingCodeResponse = PairingCodeResponse;
 
 export type PreferencesResponse = UserPreferences;
 export type PatchPreferencesRequest = Partial<UserPreferences>;

@@ -9,7 +9,16 @@ export interface SourceConnector {
   normalizeEvent(payload: unknown): NormalizedMessage | null;
   sendReply(message: NormalizedMessage, text: string): Promise<{ externalMessageId: string }>;
 }
+export type DeliveryProvider = "telegram" | "instagram";
+export interface ChannelCapabilities {
+  video: "bytes" | "url" | false;
+  buttons: "inline" | "quick_reply" | "link" | false;
+  maxVideoBytes: number | null;
+  messagingWindowMs: number | null;
+}
 export interface DeliveryConnector {
+  readonly provider?: DeliveryProvider | "console";
+  readonly capabilities?: ChannelCapabilities;
   pair(userId: string, pairingCode: string): Promise<void>;
   sendReel(deliveryTargetId: string, artifact: ReelArtifact): Promise<string>;
   sendDraft(deliveryTargetId: string, draft: ReplyDraft): Promise<string>;

@@ -3,7 +3,7 @@ import type { MessageInterpretation, ReplyTone, TimedInterpretation } from "./in
 import type { UserPreferences } from "./preferences.js";
 
 export const NormalizedMessageSchema = z.object({
-  provider: z.enum(["slack", "mock"]),
+  provider: z.enum(["slack", "instagram", "whatsapp", "sms", "mock"]),
   connectionId: z.string().uuid(),
   externalMessageId: z.string(),
   externalChannelId: z.string(),
@@ -34,7 +34,9 @@ export type ReelArtifact = {
   interpretation: TimedInterpretation;
   isMock: boolean;
   senderDisplayName: string;
-  source: "slack" | "mock";
+  source: "slack" | "instagram" | "whatsapp" | "sms" | "mock";
+  /** Private Supabase object key. URL-based delivery connectors turn this into a short-lived signed URL. */
+  storagePath?: string | null;
   originalText: string;
   /** When set, show this notice and the original; do not label the content a translation. */
   error?: { code: string; message: string };

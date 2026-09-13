@@ -5,6 +5,7 @@ import type {
   DeleteIntegrationResponse,
   EntitiesResponse,
   IntegrationsResponse,
+  InstagramPairingCodeResponse,
   MessageDetailResponse,
   MessagesListResponse,
   PairingCodeResponse,
@@ -152,6 +153,12 @@ export function getTrackedEntities(): Promise<TrackedEntitiesResponse> {
 
 export function putTrackedEntity(body: PutTrackedEntityRequest): Promise<PutTrackedEntityResponse> {
   return request<PutTrackedEntityResponse>("PUT", "tracked-entities", body);
+}
+
+// ───────────────────────────── Instagram ─────────────────────────────
+
+export function createInstagramPairingCode(): Promise<InstagramPairingCodeResponse> {
+  return request<InstagramPairingCodeResponse>("POST", "instagram/pairing-code", {});
 }
 
 // ───────────────────────────── telegram ─────────────────────────────

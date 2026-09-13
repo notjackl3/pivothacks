@@ -5,7 +5,7 @@ import { supabase } from "../client.js";
 export interface ConnectionRow {
   id: string;
   user_id: string;
-  provider: "slack" | "telegram" | "mock";
+  provider: "slack" | "telegram" | "instagram" | "whatsapp" | "sms" | "mock";
   external_account_id: string; // slack team_id | telegram chat_id
   external_user_id: string | null; // slack authed user id
   encrypted_access_token: string | null;
@@ -13,6 +13,8 @@ export interface ConnectionRow {
   status: ConnectionStatus;
   mode: ConnectionMode;
   created_at: string;
+  display_label: string | null;
+  last_inbound_at: string | null;
 }
 
 const TABLE = "connections";
@@ -21,6 +23,34 @@ const UNIQUE_KEY = "user_id,provider,external_account_id";
 
 function fail(op: string, error: { message: string }): never {
   throw new Error(`connections.${op}: ${error.message}`);
+}
+
+export async function upsertConnection(input: {
+  userId: string;
+  provider: ConnectionRow["provider"];
+  externalAccountId: string;
+  externalUserId?: string | null;
+  encryptedAccessToken?: string | null;
+  scopes?: string[];
+  mode?: ConnectionMode;
+  displayLabel?: string | null;
+  lastInboundAt?: string | null;
+}): Promise<ConnectionRow> {
+  const row = {
+    user_id: input.userId,
+    provider: input.provider,
+    external_account_id: input.externalAccountId,
+    external_user_id: input.externalUserId ?? null,
+    encrypted_access_token: input.encryptedAccessToken ?? null,
+    scopes: input.scopes ?? [],
+    status: "active" as const,
+    mode: input.mode ?? "user_token",
+    display_label: input.displayLabel ?? null,
+    last_inbound_at: input.lastInboundAt ?? null,
+  };
+  const { data, error } = await supabase.from(TABLE).upsert(row, { onConflict: UNIQUE_KEY }).select("*").single();
+  if (error) fail("upsertConnection", error);
+  return data as ConnectionRow;
 }
 
 /** Insert or update the Slack connection for (user, team). Token must already be encrypted. */
@@ -125,6 +155,34 @@ export async function upsertTelegramConnection(input: { userId: string; chatId: 
   const { data, error } = await supabase.from(TABLE).upsert(row, { onConflict: UNIQUE_KEY }).select("*").single();
   if (error) fail("upsertTelegramConnection", error);
   return data as ConnectionRow;
+}
+
+export async function upsertInstagramConnection(input: {
+  userId: string;
+  recipientId: string;
+  username?: string | null;
+  lastInboundAt?: string;
+}): Promise<ConnectionRow> {
+  return upsertConnection({
+    userId: input.userId,
+    provider: "instagram",
+    externalAccountId: input.recipientId,
+    displayLabel: input.username ?? null,
+    lastInboundAt: input.lastInboundAt ?? new Date().toISOString(),
+  });
+}
+
+export async function findInstagramConnectionByRecipient(recipientId: string): Promise<ConnectionRow | null> {
+  const { data, error } = await supabase.from(TABLE).select("*").eq("provider", "instagram").eq("external_account_id", recipientId).eq("status", "active").maybeSingle();
+  if (error) fail("findInstagramConnectionByRecipient", error);
+  return (data as ConnectionRow | null) ?? null;
+}
+
+export async function touchInstagramInbound(recipientId: string, username?: string | null): Promise<void> {
+  const patch: Record<string, string> = { last_inbound_at: new Date().toISOString() };
+  if (username) patch.display_label = username;
+  const { error } = await supabase.from(TABLE).update(patch).eq("provider", "instagram").eq("external_account_id", recipientId);
+  if (error) fail("touchInstagramInbound", error);
 }
 
 export async function setConnectionStatus(connectionId: string, status: ConnectionStatus): Promise<void> {

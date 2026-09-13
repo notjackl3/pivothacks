@@ -10,6 +10,7 @@ import { ErrorBanner, LinkButton } from "@/components/ui";
 import { SetupChecklist, type SetupStep } from "@/components/setup/SetupChecklist";
 import { SlackCard, type SlackCallbackResult } from "@/components/setup/SlackCard";
 import { TelegramCard } from "@/components/setup/TelegramCard";
+import { InstagramCard } from "@/components/setup/InstagramCard";
 import { SenderPicker } from "@/components/setup/SenderPicker";
 import { LanguagePicker } from "@/components/setup/LanguagePicker";
 
@@ -28,6 +29,7 @@ export function SetupView() {
 
   const slack = integrations.data?.slack ?? null;
   const telegram = integrations.data?.telegram ?? null;
+  const instagram = integrations.data?.instagram ?? null;
   const trackedEntities = tracked.data?.entities ?? null;
   const currentTracked = useMemo(() => trackedEntities?.find((entity) => entity.enabled) ?? null, [trackedEntities]);
 
@@ -41,6 +43,12 @@ export function SetupView() {
       label: "Connect Slack",
       state: slack?.connected ? (slack.status === "active" ? "done" : "warning") : "todo",
       detail: slack?.connected ? slack.teamName ?? slack.teamId : "Authorize your workspace",
+    },
+    {
+      key: "instagram",
+      label: "Pair Instagram",
+      state: instagram?.connected ? (instagram.windowOpen ? "done" : "warning") : "todo",
+      detail: instagram?.connected ? (instagram.windowOpen ? "Ready for delivery" : "DM the bot to wake it") : "One-time DM code",
     },
     {
       key: "telegram",
@@ -67,7 +75,7 @@ export function SetupView() {
   return (
     <AppShell
       title="Setup"
-      description="Four steps. Once they are all green, a DM from your tracked sender becomes a reel on your phone."
+      description="Connect a source and choose where reels land. Once they are all green, a DM from your tracked sender becomes a reel on your phone."
       actions={
         <LinkButton href="/history" variant="secondary">
           View history
@@ -99,9 +107,10 @@ export function SetupView() {
             }}
             index={1}
           />
-          <TelegramCard telegram={telegram} loading={integrations.loading} onRefresh={integrations.refresh} index={2} />
-          <SenderPicker slack={slack} tracked={trackedEntities} onChanged={tracked.refresh} index={3} />
-          <LanguagePicker prefs={prefs.data} loading={prefs.loading} onSaved={handlePrefsSaved} index={4} />
+          <InstagramCard instagram={instagram} loading={integrations.loading} onRefresh={integrations.refresh} index={2} />
+          <TelegramCard telegram={telegram} loading={integrations.loading} onRefresh={integrations.refresh} index={3} />
+          <SenderPicker slack={slack} tracked={trackedEntities} onChanged={tracked.refresh} index={4} />
+          <LanguagePicker prefs={prefs.data} loading={prefs.loading} onSaved={handlePrefsSaved} index={5} />
         </div>
 
         <p className="rr-rise px-1 text-xs leading-5 text-ink-faint" style={{ animationDelay: "320ms" }}>

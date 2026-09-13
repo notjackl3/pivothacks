@@ -38,14 +38,18 @@ const defaultRepository: PipelineRepository = {
   async profile(userId) {
     const results = await Promise.all([
       getDb().from("preferences").select("target_language,timezone,reply_tone").eq("user_id", userId).single(),
-      getDb().from("connections").select("external_account_id").eq("user_id", userId).eq("provider", "telegram").eq("status", "active").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      getDb().from("connections").select("provider,external_account_id,last_inbound_at").eq("user_id", userId).in("provider", ["instagram", "telegram"]).eq("status", "active").order("created_at", { ascending: false }).limit(10),
     ]);
     const preferences = results[0]; const connection = results[1];
     if (!preferences || !connection) throw new Error("Profile unavailable.");
     if (preferences.error) throw preferences.error;
     if (connection.error) throw connection.error;
-    if (!connection.data) throw Object.assign(new Error("Pair Telegram before generating a reel."), { code: "TELEGRAM_NOT_PAIRED" });
-    return { prefs: UserPreferencesSchema.parse({ targetLanguage: preferences.data.target_language, timezone: preferences.data.timezone, replyTone: preferences.data.reply_tone }), target: String(connection.data.external_account_id) };
+    const rows = (connection.data ?? []) as Array<{ provider: "instagram" | "telegram"; external_account_id: string; last_inbound_at: string | null }>;
+    const instagram = rows.find((row) => row.provider === "instagram" && row.last_inbound_at && Date.now() - Date.parse(row.last_inbound_at) < 24 * 60 * 60 * 1000);
+    const telegram = rows.find((row) => row.provider === "telegram");
+    const destination = instagram ?? telegram;
+    if (!destination) throw Object.assign(new Error("Pair Instagram or Telegram before generating a reel."), { code: "DELIVERY_NOT_PAIRED" });
+    return { prefs: UserPreferencesSchema.parse({ targetLanguage: preferences.data.target_language, timezone: preferences.data.timezone, replyTone: preferences.data.reply_tone }), target: `${destination.provider}:${destination.external_account_id}` };
   },
 };
 export function defaultPipelineDependencies(): PipelineDependencies {
@@ -63,9 +67,10 @@ const safeError = (error: unknown, defaultCode: string) => {
     LLM_REFUSED: "Translation unavailable. Review the original and try again.",
     CONFIG_MISSING: "A required service has not been configured.",
     TELEGRAM_NOT_PAIRED: "Pair Telegram on the setup page, then retry.",
+    DELIVERY_NOT_PAIRED: "Pair Instagram or Telegram on the setup page, then retry.",
     RENDER: "Video rendering failed. The complete text card is available; retry to generate a video.",
     NARRATION_TOO_LONG: "The complete narration exceeds 60 seconds. The text card includes all instructions.",
-    DELIVERY: "Telegram delivery failed. Check Telegram before retrying.",
+    DELIVERY: "Message delivery failed. Check the connected destination before retrying.",
     STORAGE: "Artifact storage is unavailable. Please retry.",
   };
   return { code, message: messages[code] ?? "Processing failed. Please try again." };
@@ -140,6 +145,7 @@ export async function generateReel(messageId: string, deps = defaultPipelineDepe
       }
       if (artifact.videoPath) {
         const storagePath = await deps.upload(message.user_id, messageId, artifact.videoPath, "video");
+        artifact.storagePath = storagePath;
         stored = await repo.saveArtifact(messageId, { interpretation_json: timedInterpretation, render_mode: artifact.renderMode, video_path: storagePath, audio_path: stored?.audio_path ?? null, duration_ms: artifact.durationMs });
       }
     }
@@ -152,9 +158,9 @@ export async function generateReel(messageId: string, deps = defaultPipelineDepe
       let lastError: unknown;
       for (let attempt = 0; attempt < 4; attempt++) {
         if (attempt > 0) await deps.pause([1000, 3000, 9000][attempt - 1]!);
-        try { deliveryId = await deps.delivery.sendReel(target!, artifact); break; } catch (error) { lastError = error; }
+        try { deliveryId = await deps.delivery.sendReel(target!, artifact); break; } catch (error) { lastError = error; if (typeof error === "object" && error !== null && "retryable" in error && error.retryable === false) break; }
       }
-      if (!deliveryId) throw Object.assign(new Error("Telegram delivery failed."), { code: "DELIVERY", cause: lastError });
+      if (!deliveryId) throw Object.assign(new Error("Message delivery failed."), { code: "DELIVERY", cause: lastError });
       // Keep persistence outside the retry loop: a DB write failure must not re-send the video.
       await repo.setDeliveryId(messageId, deliveryId);
     });
