@@ -14,7 +14,6 @@ export interface ConnectionRow {
   mode: ConnectionMode;
   created_at: string;
   display_label: string | null;
-  last_inbound_at: string | null;
 }
 
 const TABLE = "connections";
@@ -34,7 +33,6 @@ export async function upsertConnection(input: {
   scopes?: string[];
   mode?: ConnectionMode;
   displayLabel?: string | null;
-  lastInboundAt?: string | null;
 }): Promise<ConnectionRow> {
   const row = {
     user_id: input.userId,
@@ -46,7 +44,6 @@ export async function upsertConnection(input: {
     status: "active" as const,
     mode: input.mode ?? "user_token",
     display_label: input.displayLabel ?? null,
-    last_inbound_at: input.lastInboundAt ?? null,
   };
   const { data, error } = await supabase.from(TABLE).upsert(row, { onConflict: UNIQUE_KEY }).select("*").single();
   if (error) fail("upsertConnection", error);
@@ -155,34 +152,6 @@ export async function upsertTelegramConnection(input: { userId: string; chatId: 
   const { data, error } = await supabase.from(TABLE).upsert(row, { onConflict: UNIQUE_KEY }).select("*").single();
   if (error) fail("upsertTelegramConnection", error);
   return data as ConnectionRow;
-}
-
-export async function upsertInstagramConnection(input: {
-  userId: string;
-  recipientId: string;
-  username?: string | null;
-  lastInboundAt?: string;
-}): Promise<ConnectionRow> {
-  return upsertConnection({
-    userId: input.userId,
-    provider: "instagram",
-    externalAccountId: input.recipientId,
-    displayLabel: input.username ?? null,
-    lastInboundAt: input.lastInboundAt ?? new Date().toISOString(),
-  });
-}
-
-export async function findInstagramConnectionByRecipient(recipientId: string): Promise<ConnectionRow | null> {
-  const { data, error } = await supabase.from(TABLE).select("*").eq("provider", "instagram").eq("external_account_id", recipientId).eq("status", "active").maybeSingle();
-  if (error) fail("findInstagramConnectionByRecipient", error);
-  return (data as ConnectionRow | null) ?? null;
-}
-
-export async function touchInstagramInbound(recipientId: string, username?: string | null): Promise<void> {
-  const patch: Record<string, string> = { last_inbound_at: new Date().toISOString() };
-  if (username) patch.display_label = username;
-  const { error } = await supabase.from(TABLE).update(patch).eq("provider", "instagram").eq("external_account_id", recipientId);
-  if (error) fail("touchInstagramInbound", error);
 }
 
 export async function setConnectionStatus(connectionId: string, status: ConnectionStatus): Promise<void> {

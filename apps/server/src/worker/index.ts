@@ -3,6 +3,7 @@ import { config } from "../config.js";
 import { queue } from "../queue/memoryQueue.js";
 import { recoverJobs } from "../db/queries/jobs.js";
 import { generateReel } from "./generateReel.js";
+import { startScheduler } from "./scheduler.js";
 
 let started = false;
 export async function startWorker(logger?: FastifyBaseLogger): Promise<void> {
@@ -17,6 +18,7 @@ export async function startWorker(logger?: FastifyBaseLogger): Promise<void> {
     const jobs = await recoverJobs();
     for (const job of jobs) await queue.add("generate_reel", { messageId: job.message_id });
     logger?.info({ recovered: jobs.length }, "worker: ready");
+    startScheduler(logger);
   } catch {
     logger?.error("worker: job recovery failed; check the Supabase migration and configuration");
   }

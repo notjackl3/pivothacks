@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import type { PatchPreferencesRequest, PreferencesResponse, ReplyTone } from "@reelrelay/shared";
 import { describeError, patchPreferences } from "@/lib/api";
 import { LANGUAGE_OPTIONS, TONE_OPTIONS } from "@/lib/status";
-import { Banner, Card, Chip, Label, Select } from "@/components/ui";
+import { Banner, Card, Chip, Input, Label, Select } from "@/components/ui";
 
 export interface LanguagePickerProps {
   prefs: PreferencesResponse | null;
@@ -33,6 +33,8 @@ export function LanguagePicker({ prefs, loading, onSaved, index = 0 }: LanguageP
 
   const language = prefs?.targetLanguage ?? "zh-CN";
   const tone = prefs?.replyTone ?? "respectful_student";
+  const quietStart = prefs?.quietStart ?? "22:00";
+  const quietEnd = prefs?.quietEnd ?? "08:00";
   const knownLanguage = LANGUAGE_OPTIONS.some((option) => option.value === language);
   const disabled = loading || !prefs || save.kind === "saving";
 
@@ -88,9 +90,22 @@ export function LanguagePicker({ prefs, loading, onSaved, index = 0 }: LanguageP
             <p className="text-xs text-ink-faint">How English drafts sound. You always review before anything is sent.</p>
           </div>
         </div>
+        <div className="space-y-1.5 rounded-xl border border-line bg-surface-muted px-4 py-3">
+          <Label htmlFor={`${ids}-quiet-start`} hint="urgent messages still come through">
+            Quiet hours
+          </Label>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+            <Input id={`${ids}-quiet-start`} type="time" value={quietStart} disabled={disabled} className="w-32 font-mono" onChange={(event) => void update({ quietStart: event.target.value }, "quietStart")} />
+            <span>to</span>
+            <Input id={`${ids}-quiet-end`} type="time" value={quietEnd} disabled={disabled} className="w-32 font-mono" aria-label="Quiet hours end" onChange={(event) => void update({ quietEnd: event.target.value }, "quietEnd")} />
+          </div>
+          <p className="text-xs text-ink-faint">
+            Routine reels are held until quiet hours end. Low-priority ones wait for the 8 AM or 6 PM digest. High urgency, a deadline within 24 h, or a sensitive message from a professor, employer or landlord is sent right away as a text card, with the reel behind it.
+          </p>
+        </div>
         {prefs?.timezone && (
           <p className="text-xs text-ink-faint">
-            Deadlines are interpreted in <span className="font-mono text-ink-muted">{prefs.timezone}</span>.
+            Deadlines and quiet hours are interpreted in <span className="font-mono text-ink-muted">{prefs.timezone}</span>.
           </p>
         )}
       </div>

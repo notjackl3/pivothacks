@@ -10,7 +10,6 @@ import { ErrorBanner, LinkButton } from "@/components/ui";
 import { SetupChecklist, type SetupStep } from "@/components/setup/SetupChecklist";
 import { SlackCard, type SlackCallbackResult } from "@/components/setup/SlackCard";
 import { TelegramCard } from "@/components/setup/TelegramCard";
-import { InstagramCard } from "@/components/setup/InstagramCard";
 import { InboundSourcesCard } from "@/components/setup/InboundSourcesCard";
 import { SenderPicker } from "@/components/setup/SenderPicker";
 import { LanguagePicker } from "@/components/setup/LanguagePicker";
@@ -31,7 +30,6 @@ export function SetupView() {
 
   const slack = integrations.data?.slack ?? null;
   const telegram = integrations.data?.telegram ?? null;
-  const instagram = integrations.data?.instagram ?? null;
   const trackedEntities = tracked.data?.entities ?? null;
 
   const handlePrefsSaved = useCallback(() => {
@@ -43,13 +41,13 @@ export function SetupView() {
       key: "sources",
       label: "Connect inboxes",
       state: sources.data?.sources.some((source) => source.status === "active") ? "done" : "todo",
-      detail: sources.data?.sources.some((source) => source.status === "active") ? `${sources.data.sources.filter((source) => source.status === "active").length} connected` : "Gmail, Slack, Outlook or WhatsApp",
+      detail: sources.data?.sources.some((source) => source.status === "active") ? `${sources.data.sources.filter((source) => source.status === "active").length} connected` : "Gmail, Slack, Outlook, WhatsApp or Instagram",
     },
     {
-      key: "instagram",
-      label: "Pair Instagram",
-      state: instagram?.connected ? (instagram.windowOpen ? "done" : "warning") : "todo",
-      detail: instagram?.connected ? (instagram.windowOpen ? "Ready for delivery" : "DM the bot to wake it") : "One-time DM code",
+      key: "telegram",
+      label: "Pair Telegram",
+      state: telegram?.connected ? "done" : "todo",
+      detail: telegram?.connected ? "Ready for delivery" : "One-time pairing code",
     },
     {
       key: "language",
@@ -64,7 +62,7 @@ export function SetupView() {
   return (
     <AppShell
       title="Setup"
-      description="Connect your inboxes once. ReelRelay watches authorized incoming messages and delivers each reel through Instagram."
+      description="Connect your inboxes once. ReelRelay watches authorized incoming messages and delivers each reel through Telegram."
       actions={
         <LinkButton href="/history" variant="secondary">
           View history
@@ -98,15 +96,14 @@ export function SetupView() {
             }}
             index={2}
           />
-          <InstagramCard instagram={instagram} loading={integrations.loading} onRefresh={integrations.refresh} index={3} />
-          <TelegramCard telegram={telegram} loading={integrations.loading} onRefresh={integrations.refresh} index={4} />
-          <SenderPicker slack={slack} tracked={trackedEntities} onChanged={tracked.refresh} index={5} />
-          <LanguagePicker prefs={prefs.data} loading={prefs.loading} onSaved={handlePrefsSaved} index={6} />
+          <TelegramCard telegram={telegram} loading={integrations.loading} onRefresh={integrations.refresh} index={3} />
+          <SenderPicker slack={slack} tracked={trackedEntities} onChanged={tracked.refresh} index={4} />
+          <LanguagePicker prefs={prefs.data} loading={prefs.loading} onSaved={handlePrefsSaved} index={5} />
         </div>
 
         <p className="rr-rise px-1 text-xs leading-5 text-ink-faint" style={{ animationDelay: "320ms" }}>
           Privacy: only messages delivered by the inbox triggers you enable are stored. Message text is processed by Anthropic
-          (interpretation and drafts) and ElevenLabs (narration). Provider credentials remain with Composio; Instagram delivery uses a server-only token.
+          (interpretation and drafts) and ElevenLabs (narration). Provider credentials remain with Composio; Telegram delivery uses a server-only bot token.
         </p>
       </div>
     </AppShell>

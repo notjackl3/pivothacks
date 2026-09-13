@@ -11,6 +11,7 @@ const SOURCE_META: Record<ComposioToolkit, { name: string; mark: string; note: s
   slack: { name: "Slack", mark: "S", note: "Direct messages" },
   outlook: { name: "Outlook", mark: "O", note: "New inbox email" },
   whatsapp: { name: "WhatsApp", mark: "W", note: "Business messages" },
+  instagram: { name: "Instagram", mark: "I", note: "Direct messages" },
 };
 
 export function InboundSourcesCard({ data, loading, onRefresh, index = 0 }: {

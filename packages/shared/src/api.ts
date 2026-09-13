@@ -1,4 +1,5 @@
 import type { JobStatus, ReplyDraftStatus } from "./messages.js";
+import type { DeliveryMode } from "./delivery.js";
 
 export type ApiError = { error: { code: string; message: string } };
 export type MessageListItem = {
@@ -11,6 +12,10 @@ export type MessageListItem = {
   hasVideo: boolean;
   replyStatus: ReplyDraftStatus | null;
   receivedAt: string;
+  /** Pivot 03 */
+  deliveryMode: DeliveryMode | null;
+  deliverAfter: string | null;
+  reasonText: string | null;
 };
 export type MessageListResponse = { items: MessageListItem[] };
 export type DemoInjectResponse = { messageId: string; jobId: string; isMock: true };
@@ -63,6 +68,9 @@ export interface MessageDetailResponse {
     stageTimings: Record<string, number>;
     startedAt: string | null;
     completedAt: string | null;
+    /** Pivot 03 (Dev A): the triage decision; null before analysis. */
+    deliveryPlan?: import("./delivery.js").DeliveryPlan | null;
+    deliverAfter?: string | null;
   } | null;
   artifact: {
     videoUrl: string | null;
@@ -73,6 +81,10 @@ export interface MessageDetailResponse {
     deliveryMessageId: string | null;
   } | null;
   drafts: ReplyDraftRecord[];
+}
+/** POST /api/messages/:id/deliver-now → { job }; 409 code NOT_HELD unless the job is held (Pivot 03). */
+export interface DeliverNowResponse {
+  job: NonNullable<MessageDetailResponse["job"]>;
 }
 /** POST /api/messages/:id/retry → { job }; 409 code RETRY_UNAVAILABLE unless failed with < 3 attempts. */
 export interface RetryJobResponse {
@@ -104,18 +116,9 @@ export interface TelegramIntegrationState {
   connectionId: string;
   chatId: string;
 }
-export interface InstagramIntegrationState {
-  connected: boolean;
-  connectionId: string;
-  recipientId: string;
-  username: string | null;
-  lastInboundAt: string | null;
-  windowOpen: boolean;
-}
 export interface IntegrationsResponse {
   slack: SlackIntegrationState | null;
   telegram: TelegramIntegrationState | null;
-  instagram: InstagramIntegrationState | null;
 }
 
 export interface SlackStartResponse {
@@ -137,6 +140,8 @@ export interface TrackedEntity {
   externalEntityId: string;
   displayName: string;
   enabled: boolean;
+  /** Pivot 03: who this sender is to the student; drives narration register and default reply tone. */
+  relationship: import("./delivery.js").SenderRelationship;
 }
 export interface PutTrackedEntityRequest {
   connectionId: string;
@@ -144,6 +149,8 @@ export interface PutTrackedEntityRequest {
   displayName: string;
   /** Defaults to "person". "channel" is only used in bot mode (PLAN.md §10). */
   entityType?: "person" | "channel";
+  /** Pivot 03. Defaults to "other"; omitted on an update keeps the stored value. */
+  relationship?: import("./delivery.js").SenderRelationship;
 }
 export interface PutTrackedEntityResponse {
   entity: TrackedEntity;
@@ -157,7 +164,6 @@ export interface PairingCodeResponse {
   expiresAt: string;
   deepLink: string;
 }
-export type InstagramPairingCodeResponse = PairingCodeResponse;
 
 export type PreferencesResponse = UserPreferences;
 export type PatchPreferencesRequest = Partial<UserPreferences>;
@@ -186,7 +192,7 @@ export interface DeleteIntegrationResponse {
   deleted: true;
 }
 
-export type ComposioToolkit = "gmail" | "slack" | "outlook" | "whatsapp";
+export type ComposioToolkit = "gmail" | "slack" | "outlook" | "whatsapp" | "instagram";
 export type ComposioSourceStatus = "pending" | "active" | "expired" | "error";
 export interface ComposioSourceState {
   id: string;

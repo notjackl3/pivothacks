@@ -73,6 +73,10 @@ export function checkFaithfulness(original: string, interpretation: MessageInter
   const narrationCompact = compact(narration);
   const facts = [interpretation.faithfulTranslation, ...interpretation.preservedFacts.map((fact) => fact.value)].join("\n");
 
+  if (interpretation.captionTranslation && interpretation.captionTranslation.spokenSegments.length !== interpretation.spokenSegments.length) {
+    issues.push({ check: "A2", message: "captionTranslation.spokenSegments must contain exactly one translation for each narration segment, in the same order." });
+  }
+
   interpretation.actionItems.forEach((action, actionIndex) => {
     if (!normalizedOriginal.includes(normalize(action.evidenceQuote))) issues.push({ check: "A1", actionIndex, message: "Evidence must be a verbatim excerpt of the original message." });
     if (action.dueText && !normalizedOriginal.includes(normalize(action.dueText))) issues.push({ check: "A1", actionIndex, message: "dueText must be copied from the original message." });

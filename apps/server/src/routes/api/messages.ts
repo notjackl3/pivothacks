@@ -1,16 +1,16 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import type { MessageListItem } from "@reelrelay/shared";
+import type { DeliveryPlan, MessageListItem } from "@reelrelay/shared";
 import { requireUser } from "../../auth/requireUser.js";
 import { getDb } from "../../db/client.js";
 import { getMessage, listMessages } from "../../db/queries/messages.js";
-import { getJob, retryJob, type JobRow } from "../../db/queries/jobs.js";
+import { getJob, releaseHeldJob, retryJob, type JobRow } from "../../db/queries/jobs.js";
 import { getArtifact, type ArtifactRow } from "../../db/queries/artifacts.js";
 import { signedArtifactUrl } from "../../render/upload.js";
 import { queue } from "../../queue/memoryQueue.js";
 
 const notFound = () => Object.assign(new Error("Message not found."), { statusCode: 404, code: "NOT_FOUND" });
-const jobView = (job: JobRow) => ({ id: job.id, status: job.status, attemptCount: job.attempt_count, errorCode: job.error_code, errorDetail: job.error_detail, stageTimings: job.stage_timings, startedAt: job.started_at, completedAt: job.completed_at });
+const jobView = (job: JobRow) => ({ id: job.id, status: job.status, attemptCount: job.attempt_count, errorCode: job.error_code, errorDetail: job.error_detail, stageTimings: job.stage_timings, startedAt: job.started_at, completedAt: job.completed_at, deliveryPlan: job.delivery_plan ?? null, deliverAfter: job.deliver_after ?? null });
 export async function registerMessageRoutes(app: FastifyInstance): Promise<void> {
   const authenticate = async (request: Parameters<typeof requireUser>[0]) => { await requireUser(request); };
   app.get<{ Querystring: { limit?: string } }>("/api/messages", { preHandler: authenticate }, async (request) => {
@@ -20,16 +20,17 @@ export async function registerMessageRoutes(app: FastifyInstance): Promise<void>
     if (messages.length === 0) return { items: [] };
     const ids = messages.map((message) => message.id);
     const [jobs, artifacts, drafts] = await Promise.all([
-      getDb().from("processing_jobs").select("message_id,status").in("message_id", ids),
+      getDb().from("processing_jobs").select("message_id,status,delivery_plan,deliver_after").in("message_id", ids),
       getDb().from("reel_artifacts").select("message_id,video_path,interpretation_json").in("message_id", ids),
       getDb().from("reply_drafts").select("message_id,status,created_at").eq("user_id", request.userId).in("message_id", ids).order("created_at", { ascending: false }),
     ]);
     for (const result of [jobs, artifacts, drafts]) if (result.error) throw result.error;
-    const jobMap = new Map((jobs.data ?? []).map((row) => [row.message_id as string, row.status as MessageListItem["jobStatus"]]));
+    const jobMap = new Map((jobs.data ?? []).map((row) => [row.message_id as string, row as { status: MessageListItem["jobStatus"]; delivery_plan: DeliveryPlan | null; deliver_after: string | null }]));
     const artifactMap = new Map((artifacts.data ?? []).map((row) => [row.message_id as string, row as Pick<ArtifactRow, "message_id" | "video_path" | "interpretation_json">]));
     const items: MessageListItem[] = messages.map((message) => {
       const artifact = artifactMap.get(message.id);
-      return { id: message.id, sender: message.sender_display_name, preview: message.original_text.slice(0, 180), urgency: artifact?.interpretation_json.urgency ?? null, jobStatus: jobMap.get(message.id) ?? "queued", isMock: message.is_mock, hasVideo: Boolean(artifact?.video_path), replyStatus: (drafts.data?.find((row) => row.message_id === message.id)?.status as MessageListItem["replyStatus"]) ?? null, receivedAt: message.received_at };
+      const job = jobMap.get(message.id);
+      return { id: message.id, sender: message.sender_display_name, preview: message.original_text.slice(0, 180), urgency: artifact?.interpretation_json.urgency ?? null, jobStatus: job?.status ?? "queued", isMock: message.is_mock, hasVideo: Boolean(artifact?.video_path), replyStatus: (drafts.data?.find((row) => row.message_id === message.id)?.status as MessageListItem["replyStatus"]) ?? null, receivedAt: message.received_at, deliveryMode: job?.delivery_plan?.mode ?? null, deliverAfter: job?.deliver_after ?? null, reasonText: job?.delivery_plan?.reasonText ?? null };
     });
     return { items };
   });
@@ -57,6 +58,15 @@ export async function registerMessageRoutes(app: FastifyInstance): Promise<void>
     const job = await retryJob(message.id);
     if (!job) throw Object.assign(new Error("Only failed jobs with fewer than three attempts can be retried."), { statusCode: 409, code: "RETRY_UNAVAILABLE" });
     await queue.add("generate_reel", { messageId: message.id });
+    return { job: jobView(job) };
+  });
+  /** Pivot 03: "Deliver now" on a held job. The scheduler picks it up on its next tick (<= 10 s). */
+  app.post<{ Params: { id: string } }>("/api/messages/:id/deliver-now", { preHandler: authenticate }, async (request) => {
+    if (!z.string().uuid().safeParse(request.params.id).success) throw notFound();
+    const message = await getMessage(request.userId, request.params.id);
+    if (!message) throw notFound();
+    const job = await releaseHeldJob(message.id);
+    if (!job) throw Object.assign(new Error("Only held jobs can be delivered early."), { statusCode: 409, code: "NOT_HELD" });
     return { job: jobView(job) };
   });
 }

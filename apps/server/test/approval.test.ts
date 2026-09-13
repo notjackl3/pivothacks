@@ -38,7 +38,7 @@ const MESSAGE: StoredMessage = {
   provider: "slack",
 };
 
-const PREFS: UserPreferences = { targetLanguage: "zh-CN", timezone: "America/Toronto", replyTone: "respectful_student" };
+const PREFS: UserPreferences = { targetLanguage: "zh-CN", timezone: "America/Toronto", replyTone: "respectful_student", quietStart: "22:00", quietEnd: "08:00" };
 
 function toNormalized(m: StoredMessage): NormalizedMessage {
   return {

@@ -1,5 +1,5 @@
 // Dev B. Queries for `tracked_entities`.
-import type { TrackedEntity } from "@reelrelay/shared";
+import { SenderRelationshipSchema, type SenderRelationship, type TrackedEntity } from "@reelrelay/shared";
 import { supabase } from "../client.js";
 
 export interface TrackedEntityRow {
@@ -10,9 +10,11 @@ export interface TrackedEntityRow {
   external_entity_id: string;
   display_name: string;
   enabled: boolean;
+  /** Pivot 03 (migration 0002). */
+  relationship?: string | null;
 }
 
-const TRACKED_ENTITY_COLUMNS = "id, user_id, connection_id, entity_type, external_entity_id, display_name, enabled";
+const TRACKED_ENTITY_COLUMNS = "id, user_id, connection_id, entity_type, external_entity_id, display_name, enabled, relationship";
 
 /** Query files must not import from routes: the api error handler maps any { statusCode, code } error to the envelope. */
 function dbError(message: string): Error {
@@ -27,6 +29,7 @@ export function toApiTrackedEntity(row: TrackedEntityRow): TrackedEntity {
     externalEntityId: row.external_entity_id,
     displayName: row.display_name,
     enabled: row.enabled,
+    relationship: SenderRelationshipSchema.safeParse(row.relationship).success ? (row.relationship as SenderRelationship) : "other",
   };
 }
 
@@ -67,8 +70,10 @@ export async function replaceTrackedEntity(input: {
   entityType: "person" | "channel";
   externalEntityId: string;
   displayName: string;
+  /** Pivot 03. Omitted = keep the stored value (or the column default on insert). */
+  relationship?: SenderRelationship;
 }): Promise<TrackedEntityRow> {
-  const { userId, connectionId, entityType, externalEntityId, displayName } = input;
+  const { userId, connectionId, entityType, externalEntityId, displayName, relationship } = input;
 
   // Drop the other entities of this type first: if the upsert below fails, nothing is tracked
   // rather than two senders at once.
@@ -91,6 +96,7 @@ export async function replaceTrackedEntity(input: {
         external_entity_id: externalEntityId,
         display_name: displayName,
         enabled: true,
+        ...(relationship ? { relationship } : {}),
       },
       { onConflict: "connection_id,entity_type,external_entity_id" },
     )

@@ -1,0 +1,80 @@
+{
+    "narrationMs":  19320,
+    "captionSegments":  [
+                            {
+                                "text":  "项目原定周一晚上",
+                                "startMs":  0,
+                                "endMs":  1927
+                            },
+                            {
+                                "text":  "11:59截止，",
+                                "startMs":  1927,
+                                "endMs":  3309
+                            },
+                            {
+                                "text":  "现改为周五",
+                                "startMs":  3309,
+                                "endMs":  4331
+                            },
+                            {
+                                "text":  "下午5:00。",
+                                "startMs":  4331,
+                                "endMs":  5712
+                            },
+                            {
+                                "text":  "将 PDF 提交到",
+                                "startMs":  5712,
+                                "endMs":  7268
+                            },
+                            {
+                                "text":  "Quercus。",
+                                "startMs":  7268,
+                                "endMs":  8139
+                            },
+                            {
+                                "text":  "将源代码仓库",
+                                "startMs":  8139,
+                                "endMs":  9381
+                            },
+                            {
+                                "text":  "链接通过 Slack",
+                                "startMs":  9381,
+                                "endMs":  10623
+                            },
+                            {
+                                "text":  "直接发给教授。",
+                                "startMs":  10623,
+                                "endMs":  12098
+                            },
+                            {
+                                "text":  "不要把仓库压缩",
+                                "startMs":  12098,
+                                "endMs":  13595
+                            },
+                            {
+                                "text":  "包上传到",
+                                "startMs":  13595,
+                                "endMs":  14500
+                            },
+                            {
+                                "text":  "Quercus。",
+                                "startMs":  14500,
+                                "endMs":  15522
+                            },
+                            {
+                                "text":  "如果小组需要延期，",
+                                "startMs":  15522,
+                                "endMs":  17182
+                            },
+                            {
+                                "text":  "请在周三前告知",
+                                "startMs":  17182,
+                                "endMs":  18587
+                            },
+                            {
+                                "text":  "教授。",
+                                "startMs":  18587,
+                                "endMs":  19319
+                            }
+                        ]
+}

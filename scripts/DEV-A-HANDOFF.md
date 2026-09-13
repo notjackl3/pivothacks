@@ -1,5 +1,55 @@
 ﻿# Dev A handoff
 
+## Video generation
+
+Run `pnpm reel:render` from the root with `ELEVENLABS_API_KEY` in `.env`.
+`ELEVENLABS_VOICE_ID` is optional; the renderer selects a stock voice otherwise.
+The command exports the synthetic Chinese demo to
+`build/demo/professor_deadline.mp4`, with a JSON artifact alongside it. Install
+`ffprobe` and Chrome/Edge before rendering on Windows.
+
+The video includes selectable Subway Surfers, Minecraft parkour, or GTA racing
+gameplay, Chinese narration starting
+immediately, Chinese captions with English translations, bilingual action pages,
+and embedded gameplay attribution. `pnpm reel:preview` opens the composition in
+Remotion Studio with a bundled, voiced demo sample. `pnpm reel:watch` serves the
+exported MP4 at `http://localhost:4010` with a Play with sound button and a download
+link. Pass `--file build/demo/professor_deadline.bilingual.mp4` to watch that export.
+`pnpm reel:render --silent` exports an
+explicitly silent preview. `pnpm reel:render --input message.json` accepts
+`{ originalText, senderDisplayName, interpretation: MessageInterpretation }`.
+See `scripts/VIDEO-GEN-PLAN.md` for the complete run instructions.
+
+```sh
+pnpm reel:render --background minecraft-parkour
+pnpm reel:render --background gta-racing
+pnpm reel:render --background gta-racing --reuse-narration build/demo/professor_deadline.json
+pnpm reel:watch
+```
+
+Named backgrounds write `build/demo/professor_deadline.minecraft-parkour.mp4`
+and `build/demo/professor_deadline.gta-racing.mp4`. The player offers every
+available background in a dropdown; restart it after rendering new choices.
+`--reuse-narration` validates that the saved artifact has the same narration and
+language, then reuses its audio and timings without another speech request.
+Studio includes `Reel`, `MinecraftParkour`, and `GtaRacing` compositions with sound.
+Server callers can use `new RemotionRenderer(context, { background: "gta-racing" })`.
+The default remains Subway Surfers. Assets and source credits are documented in
+`packages/reel/public/gameplay/README.md`.
+
+For bilingual custom input, provide `interpretation.captionTranslation` with
+`language`, `hook`, and `spokenSegments`. The translated segments must match the
+primary narration's segment count and order. The schema asks the live engine for
+English translations of non-English narration. Old records without this optional
+field retain their existing captions; the renderer does not invent a translation.
+
+The worker already calls the updated `synthesizeSpeech` → `withTiming` →
+`RemotionRenderer` path. `ReelArtifact` and the delivery contract are unchanged;
+`videoPath` is the local MP4. Local fixture exports do not establish that live
+Slack, Supabase, or Telegram delivery is working.
+
+## Existing server integration
+
 Install with `pnpm install --frozen-lockfile`. Copy `.env.example` to `.env`; set the service keys locally. Run `pnpm dev`.
 
 Dev B can replace the scaffold files at `routes/api/index.ts`, `routes/webhooks/index.ts`, `delivery/index.ts`, and `delivery/telegram/bot.ts`. Retain the calls to `registerMessageRoutes(app)` and `registerDemoRoutes(app)` in API registration.

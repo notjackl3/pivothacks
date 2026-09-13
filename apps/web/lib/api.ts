@@ -3,9 +3,9 @@ import type {
   ApproveReplyResponse,
   ConnectionMode,
   DeleteIntegrationResponse,
+  DeliverNowResponse,
   EntitiesResponse,
   IntegrationsResponse,
-  InstagramPairingCodeResponse,
   ComposioConnectResponse,
   ComposioSourcesResponse,
   ComposioToolkit,
@@ -158,12 +158,6 @@ export function putTrackedEntity(body: PutTrackedEntityRequest): Promise<PutTrac
   return request<PutTrackedEntityResponse>("PUT", "tracked-entities", body);
 }
 
-// ───────────────────────────── Instagram ─────────────────────────────
-
-export function createInstagramPairingCode(): Promise<InstagramPairingCodeResponse> {
-  return request<InstagramPairingCodeResponse>("POST", "instagram/pairing-code", {});
-}
-
 // ───────────────────────────── inbound sources ─────────────────────────────
 
 export function getComposioSources(): Promise<ComposioSourcesResponse> {
@@ -202,6 +196,11 @@ export function getMessage(id: string): Promise<MessageDetailResponse> {
 
 export function retryMessage(id: string): Promise<RetryJobResponse> {
   return request<RetryJobResponse>("POST", encodePath("messages", id, "retry"), {});
+}
+
+/** Pivot 03: release a held reel now instead of waiting for quiet hours / the digest slot. */
+export function deliverNow(id: string): Promise<DeliverNowResponse> {
+  return request<DeliverNowResponse>("POST", encodePath("messages", id, "deliver-now"), {});
 }
 
 // ───────────────────────────── replies ─────────────────────────────

@@ -20,9 +20,12 @@ const PatchPreferencesBody = z
     targetLanguage: z.string().trim().min(2).max(12).optional(),
     timezone: z.string().trim().min(1).max(64).refine(isValidTimeZone, { message: "Unknown IANA time zone" }).optional(),
     replyTone: ReplyToneSchema.optional(),
+    /** Pivot 03: local HH:mm; non-urgent reels are held while the clock is inside [quietStart, quietEnd). */
+    quietStart: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "HH:mm").optional(),
+    quietEnd: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "HH:mm").optional(),
   })
   .refine((body) => Object.values(body).some((value) => value !== undefined), {
-    message: "Provide at least one of targetLanguage, timezone, replyTone",
+    message: "Provide at least one of targetLanguage, timezone, replyTone, quietStart, quietEnd",
   });
 
 export async function registerPreferencesRoutes(api: FastifyInstance): Promise<void> {

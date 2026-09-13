@@ -29,12 +29,6 @@ const EnvSchema = z.object({
   SLACK_USER_SCOPES: z.string().default("im:history,im:read,users:read,chat:write"),
   TELEGRAM_BOT_TOKEN: optionalString,
   TELEGRAM_BOT_USERNAME: z.string().default("reelrelay_demo_bot"),
-  INSTAGRAM_ACCOUNT_ID: optionalString,
-  INSTAGRAM_USERNAME: optionalString,
-  INSTAGRAM_ACCESS_TOKEN: optionalString,
-  INSTAGRAM_APP_SECRET: optionalString,
-  INSTAGRAM_VERIFY_TOKEN: optionalString,
-  INSTAGRAM_API_VERSION: z.string().regex(/^v\d+\.\d+$/).default("v23.0"),
   COMPOSIO_API_KEY: optionalString,
   COMPOSIO_WEBHOOK_SECRET: optionalString,
   /** JSON maps toolkit -> Composio auth config id, for example {"gmail":"ac_..."}. */
@@ -59,6 +53,8 @@ const EnvSchema = z.object({
   ENGINE_MODE: z.enum(["live", "stub"]).default("live"),
   PIPELINE_MODE: z.enum(["video", "text"]).default("video"),
   DATA_DIR: z.string().default("build/reelrelay"),
+  /** Pivot 03 demo: fixed clock (ISO) for the triage router and the held-job scheduler. POST /api/demo/clock overrides at runtime. */
+  DEMO_NOW: z.preprocess((v) => v === "" ? undefined : v, z.string().datetime({ offset: true }).optional()),
 });
 export const config = EnvSchema.parse(process.env);
 export const dataDir = path.resolve(repoRoot, config.DATA_DIR);

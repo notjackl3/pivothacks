@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./timing": "./src/timing.ts"
+    "./timing": "./src/timing.ts",
+    "./captions": "./src/captionChunks.ts",
+    "./gameplays": "./src/gameplays.ts"
   },
   "scripts": {
     "preview": "remotion studio src/index.ts",

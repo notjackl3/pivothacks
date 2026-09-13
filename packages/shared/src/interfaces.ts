@@ -1,6 +1,7 @@
 import type { MessageInterpretation, ReplyDraftOutput, ReplyTone, TimedInterpretation } from "./interpretation.js";
 import type { ConversationContext, NormalizedMessage, ReelArtifact, ReplyDraft, TrackableEntity } from "./messages.js";
 import type { UserPreferences } from "./preferences.js";
+import type { DeliveryPlan, SenderRelationship } from "./delivery.js";
 
 export interface SourceConnector {
   connect(userId: string): Promise<{ authorizeUrl: string }>;
@@ -9,22 +10,19 @@ export interface SourceConnector {
   normalizeEvent(payload: unknown): NormalizedMessage | null;
   sendReply(message: NormalizedMessage, text: string): Promise<{ externalMessageId: string }>;
 }
-export type DeliveryProvider = "telegram" | "instagram";
-export interface ChannelCapabilities {
-  video: "bytes" | "url" | false;
-  buttons: "inline" | "quick_reply" | "link" | false;
-  maxVideoBytes: number | null;
-  messagingWindowMs: number | null;
-}
 export interface DeliveryConnector {
-  readonly provider?: DeliveryProvider | "console";
-  readonly capabilities?: ChannelCapabilities;
   pair(userId: string, pairingCode: string): Promise<void>;
   sendReel(deliveryTargetId: string, artifact: ReelArtifact): Promise<string>;
   sendDraft(deliveryTargetId: string, draft: ReplyDraft): Promise<string>;
+  /** Pivot 03, optional: instant text card sent before rendering. When absent the worker sends a text_only artifact through sendReel. */
+  sendInstantCard?(deliveryTargetId: string, artifact: ReelArtifact, plan: DeliveryPlan): Promise<string>;
+  /** Pivot 03, optional: plain text line, used for the digest header. */
+  sendText?(deliveryTargetId: string, text: string): Promise<string>;
 }
+/** Pivot 03: situational context handed to the engine. */
+export type AnalysisContext = { relationship?: SenderRelationship };
 export interface ComprehensionEngine {
-  analyze(message: NormalizedMessage, prefs: UserPreferences): Promise<MessageInterpretation>;
+  analyze(message: NormalizedMessage, prefs: UserPreferences, context?: AnalysisContext): Promise<MessageInterpretation>;
   draftReply(ctx: ConversationContext, userInput: string, tone: ReplyTone): Promise<ReplyDraftOutput>;
 }
 export interface ReelRenderer {

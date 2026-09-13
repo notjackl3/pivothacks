@@ -4,7 +4,6 @@ import { z } from "zod";
 import type {
   DeleteIntegrationResponse,
   IntegrationsResponse,
-  InstagramIntegrationState,
   SlackIntegrationState,
   TelegramIntegrationState,
 } from "@reelrelay/shared";
@@ -18,7 +17,6 @@ import {
   type ConnectionRow,
 } from "../../db/queries/connections.js";
 import { ApiError } from "./index.js";
-import { registerInstagramRoutes } from "./instagram.js";
 import { registerComposioRoutes } from "./composio.js";
 
 /** Loose 8-4-4-4-12 form: anything else can never be one of the user's connection ids. */
@@ -67,20 +65,12 @@ function telegramState(connections: ConnectionRow[]): TelegramIntegrationState |
   };
 }
 
-function instagramState(connections: ConnectionRow[]): InstagramIntegrationState | null {
-  const connection = newestOf(connections.filter((row) => row.provider === "instagram"));
-  if (!connection) return null;
-  const inbound = connection.last_inbound_at ? Date.parse(connection.last_inbound_at) : 0;
-  return { connected: connection.status === "active", connectionId: connection.id, recipientId: connection.external_account_id, username: connection.display_label, lastInboundAt: connection.last_inbound_at, windowOpen: Number.isFinite(inbound) && Date.now() - inbound < 24 * 60 * 60 * 1000 };
-}
-
 export async function registerIntegrationsRoutes(api: FastifyInstance): Promise<void> {
-  await registerInstagramRoutes(api);
   await registerComposioRoutes(api);
   api.get("/api/integrations", async (req) => {
     const userId = await requireUser(req);
     const [slack, connections] = await Promise.all([slackState(userId, req), listConnectionsForUser(userId)]);
-    return { slack, telegram: telegramState(connections), instagram: instagramState(connections) } satisfies IntegrationsResponse;
+    return { slack, telegram: telegramState(connections) } satisfies IntegrationsResponse;
   });
 
   api.delete("/api/integrations/:id", async (req) => {

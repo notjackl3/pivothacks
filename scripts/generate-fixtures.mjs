@@ -9,11 +9,15 @@ const cases = [
     name: "professor_deadline", sender: "Professor Chen",
     text: "Hi Jack — because Monday is a university closure, the project deadline has moved from Monday at 11:59 PM to Friday at 5:00 PM. Submit the PDF to Quercus, but send your source-code repository link directly to me in Slack. Do not upload the repository archive to Quercus. Let me know by Wednesday if your group needs an extension.",
     title: "项目截止日期已更改", hook: "截止日期变了，请留意提交方式。",
+    captionTranslation: {
+      language: "en", hook: "The deadline changed. Check where to submit.",
+      spokenSegments: ["The project was due Monday at 11:59 PM.", "Now it is due Friday at 5:00 PM.", "Submit the PDF to Quercus.", "Send the source-code repository link in Slack", "directly to the professor.", "Do not upload the repository archive to Quercus.", "If your group needs an extension,", "let the professor know by Wednesday."],
+    },
     translation: "Jack，你好——因为 Monday 大学关闭，项目截止时间从 Monday at 11:59 PM 改到 Friday at 5:00 PM。把 PDF 提交到 Quercus，但请通过 Slack 直接把源代码仓库链接发给我。不要把仓库压缩包上传到 Quercus。如果你们小组需要延期，请在 Wednesday 前告诉我。",
     segments: ["项目原定周一晚上11:59截止，", "现改为周五下午5:00。", "将 PDF 提交到 Quercus。", "将源代码仓库链接通过 Slack", "直接发给教授。", "不要把仓库压缩包上传到 Quercus。", "如果小组需要延期，", "请在周三前告知教授。"],
     actions: [
       action("将 PDF 提交到 Quercus。", "Submit the PDF to Quercus", "Submit the PDF to Quercus", "Friday at 5:00 PM"),
-      action("将源代码仓库链接通过 Slack 直接发给教授。", "Send the source-code repository link in Slack", "send your source-code repository link directly to me in Slack"),
+      action("将源代码仓库链接通过 Slack 直接发给教授。", "Send the source-code repository link directly to the professor in Slack", "send your source-code repository link directly to me in Slack"),
       action("不要把仓库压缩包上传到 Quercus。", "Do not upload the repository archive to Quercus", "Do not upload the repository archive to Quercus.", null, true),
       action("如果小组需要延期，请在周三前告知教授。", "Let the professor know by Wednesday if an extension is needed", "Let me know by Wednesday if your group needs an extension.", "Wednesday"),
     ],
@@ -87,6 +91,7 @@ for (const [index, item] of cases.entries()) {
   const interpretation = {
     sourceLanguage: item.name === "bilingual" ? "en,zh-CN" : "en", targetLanguage: "zh-CN",
     faithfulTranslation: item.translation, hook: item.hook, spokenSegments: item.segments,
+    ...(item.captionTranslation ? { captionTranslation: item.captionTranslation } : {}),
     shortTitle: item.title, senderIntent: item.translation, urgency: "high", isSensitive: true,
     actionItems: item.actions, preservedFacts: item.facts, ambiguities: item.ambiguities,
     suggestedClarifyingQuestions: ["请问这里指的是哪一个具体日期？"],

@@ -1,10 +1,16 @@
-export function Chip({ sender, source, urgency, isMock }: { sender: string; source: string; urgency: "low" | "medium" | "high"; isMock: boolean }) {
-  return <div style={{ position: "absolute", top: 76, left: 50, right: 50 }}>
-    <div style={{ fontSize: 19, color: "#a9c8cc", letterSpacing: 4, marginBottom: 20 }}>REELRELAY</div>
-    <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-      <span style={{ color: "#eef4f2", fontSize: 25 }}>{sender} · {source === "mock" ? "Demo" : "Slack"}</span>
-      {urgency !== "low" ? <span style={{ fontSize: 16, color: urgency === "high" ? "#f4cda1" : "#bdcfc7", border: "1px solid #61716f", borderRadius: 6, padding: "5px 10px" }}>{urgency === "high" ? "请留意" : "待处理"}</span> : null}
+const SOURCE_LABELS: Record<string, string> = {
+  slack: "Slack", gmail: "Gmail", outlook: "Outlook", instagram: "Instagram", whatsapp: "WhatsApp", sms: "SMS",
+};
+
+export function Chip({ sender, source, urgency, isMock, targetLanguage = "zh-CN" }: { sender: string; source: string; urgency: "low" | "medium" | "high"; isMock: boolean; targetLanguage?: string }) {
+  const chinese = targetLanguage.startsWith("zh");
+  return <div style={{ position: "absolute", top: 64, left: 38, right: 38, display: "flex", alignItems: "center", gap: 17, padding: "19px 22px", borderRadius: 22, background: "rgba(15,17,25,0.94)", border: "1px solid rgba(255,255,255,0.17)" }}>
+    <div style={{ width: 52, height: 52, flexShrink: 0, background: "#ff693d", color: "white", borderRadius: 17, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>R</div>
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ fontSize: 25, color: "white", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sender}</div>
+      <div style={{ fontSize: 15, color: "#bfc2ce", marginTop: 4 }}>ReelRelay · {source === "mock" ? (chinese ? "示例消息" : "Sample message") : SOURCE_LABELS[source] ?? "Slack"}</div>
     </div>
-    {isMock ? <div style={{ fontSize: 17, color: "#f4cda1", marginTop: 10 }}>DEMO-INJECTED · 模拟消息</div> : null}
+    {isMock ? <span style={{ fontSize: 14, color: "#d1d2db", padding: "6px 8px", border: "1px solid #565864", borderRadius: 6 }}>DEMO</span> : null}
+    {urgency === "high" ? <span style={{ fontSize: 15, color: "#17171c", background: "#ffec55", padding: "7px 11px", borderRadius: 8 }}>{chinese ? "重要" : "IMPORTANT"}</span> : null}
   </div>;
 }

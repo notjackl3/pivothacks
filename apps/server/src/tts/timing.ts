@@ -1,4 +1,5 @@
 import { BODY_START_MS, totalDurationMs } from "@reelrelay/reel/timing";
+import { attachCaptionTranslations, captionChunks, captionUnits } from "@reelrelay/reel/captions";
 import type { CaptionSegment, MessageInterpretation, TimedInterpretation } from "@reelrelay/shared";
 
 export type CharacterAlignment = {
@@ -25,13 +26,13 @@ export function alignedTiming(segments: string[], alignment: CharacterAlignment,
   if (glyphs.map((glyph) => glyph.text).join("") !== segments.map(clean).join("")) throw new Error("Alignment does not match the narration text.");
   let offset = 0;
   let previousEnd = 0;
-  const captionSegments = segments.map((text) => {
+  const captionSegments = captionChunks(segments).map((text) => {
     const length = Array.from(clean(text)).length;
     const first = glyphs[offset]; const last = glyphs[offset + length - 1];
     if (!length || !first || !last) throw new Error("A narration segment is empty or unaligned.");
     offset += length;
     const start = Math.max(first.start, previousEnd);
-    const end = Math.max(last.end, start + 700);
+    const end = Math.max(last.end, start + 1);
     previousEnd = end;
     return { text, startMs: BODY_START_MS + start, endMs: BODY_START_MS + end };
   });
@@ -41,13 +42,20 @@ export function alignedTiming(segments: string[], alignment: CharacterAlignment,
 }
 export function captionsOnlyTiming(segments: string[]): { narrationMs: number; captionSegments: CaptionSegment[] } {
   let offset = 0;
-  const captionSegments = segments.map((text) => {
+  const captionSegments = segments.flatMap((text) => {
     const cjk = text.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu)?.length ?? 0;
     const other = Array.from(text.replace(/\s/gu, "")).length - cjk;
     const duration = 2200 + cjk * 90 + other * 60;
-    const segment = { text, startMs: BODY_START_MS + offset, endMs: BODY_START_MS + offset + duration };
+    const chunks = captionChunks([text]);
+    const totalUnits = chunks.reduce((sum, chunk) => sum + captionUnits(chunk), 0);
+    let elapsedUnits = 0;
+    const timedChunks = chunks.map((chunk) => {
+      const startMs = BODY_START_MS + offset + Math.round(elapsedUnits / totalUnits * duration);
+      elapsedUnits += captionUnits(chunk);
+      return { text: chunk, startMs, endMs: BODY_START_MS + offset + Math.round(elapsedUnits / totalUnits * duration) };
+    });
     offset += duration;
-    return segment;
+    return timedChunks;
   });
   if (!captionSegments.length) throw new Error("Narration needs at least one caption.");
   return { narrationMs: offset, captionSegments };
@@ -55,7 +63,8 @@ export function captionsOnlyTiming(segments: string[]): { narrationMs: number; c
 export function withTiming(interp: MessageInterpretation, timing: { narrationMs: number; captionSegments: CaptionSegment[] }): TimedInterpretation {
   validateCaptionTiming(timing.captionSegments, timing.narrationMs);
   if (timing.captionSegments.map((segment) => clean(segment.text)).join("") !== interp.spokenSegments.map(clean).join("")) throw new Error("Captions must reproduce the complete narration.");
-  return { ...interp, ...timing, totalMs: totalDurationMs(timing.narrationMs, interp.actionItems.length) };
+  const captionSegments = attachCaptionTranslations(timing.captionSegments, interp.spokenSegments, interp.captionTranslation?.spokenSegments);
+  return { ...interp, ...timing, captionSegments, totalMs: totalDurationMs(timing.narrationMs, interp.actionItems.length) };
 }
 export function validateCaptionTiming(segments: CaptionSegment[], narrationMs: number): void {
   let previousEnd = BODY_START_MS;

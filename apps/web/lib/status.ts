@@ -1,11 +1,13 @@
 import type {
   ConnectionMode,
+  DeliveryMode,
   JobStatus,
   MessageDetailResponse,
   MessageListItem,
   RenderMode,
   ReplyDraftStatus,
   ReplyTone,
+  SenderRelationship,
 } from "@reelrelay/shared";
 
 export type ChipTone = "neutral" | "accent" | "success" | "warning" | "danger";
@@ -21,14 +23,17 @@ export interface StatusMeta {
 export const JOB_STATUS_META: Record<JobStatus, StatusMeta> = {
   queued: { label: "Queued", tone: "neutral", active: true, hint: "Waiting for the worker" },
   analyzing: { label: "Analyzing", tone: "accent", active: true, hint: "Interpreting the message" },
+  notifying: { label: "Instant card", tone: "warning", active: true, hint: "Urgent: sending the actions before the reel" },
   voicing: { label: "Voicing", tone: "accent", active: true, hint: "Generating narration" },
   rendering: { label: "Rendering", tone: "accent", active: true, hint: "Rendering the reel" },
+  held: { label: "Held", tone: "warning", hint: "Rendered; waiting for quiet hours to end or the digest slot" },
   delivering: { label: "Delivering", tone: "accent", active: true, hint: "Sending to Telegram" },
   complete: { label: "Delivered", tone: "success", hint: "Reel delivered to Telegram" },
   failed: { label: "Failed", tone: "danger", hint: "Processing failed" },
 };
 
-const TERMINAL_JOB_STATUSES: ReadonlySet<string> = new Set<JobStatus>(["complete", "failed"]);
+/** `held` counts as settled for polling: it only moves when the scheduler releases it (or Deliver now is pressed, which refreshes). */
+const TERMINAL_JOB_STATUSES: ReadonlySet<string> = new Set<JobStatus>(["complete", "failed", "held"]);
 
 export function jobStatusMeta(status: string | null | undefined): StatusMeta {
   if (!status) return JOB_STATUS_META.queued;
@@ -101,6 +106,32 @@ export const TONE_OPTIONS: { value: ReplyTone; label: string }[] = [
   { value: "direct", label: "Direct" },
 ];
 
+// ───────────────────────────── Pivot 03: context ─────────────────────────────
+
+export const RELATIONSHIP_OPTIONS: { value: SenderRelationship; label: string; hint: string }[] = [
+  { value: "professor", label: "Professor / TA", hint: "Formal narration; respectful student replies" },
+  { value: "employer", label: "Employer / manager", hint: "Formal narration; shifts and pay are essential" },
+  { value: "landlord", label: "Landlord", hint: "Formal; rent and notices are sensitive, sent instantly" },
+  { value: "peer", label: "Classmate / friend", hint: "Casual narration; warm replies" },
+  { value: "other", label: "Other", hint: "Uses your reply tone preference" },
+];
+
+export function relationshipLabel(value: string | null | undefined): string {
+  if (!value) return "Other";
+  return RELATIONSHIP_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
+
+export const DELIVERY_MODE_META: Record<DeliveryMode, StatusMeta> = {
+  instant: { label: "⚡ Instant", tone: "danger", hint: "Actions sent as a text card within seconds; the reel followed" },
+  reel: { label: "🎬 Reel", tone: "accent", hint: "Normal path: rendered, then delivered" },
+  digest: { label: "☀️ Digest", tone: "neutral", hint: "Low urgency: bundled into the next 8 AM / 6 PM digest" },
+};
+
+export function deliveryModeMeta(mode: string | null | undefined): StatusMeta | null {
+  if (!mode) return null;
+  return DELIVERY_MODE_META[mode as DeliveryMode] ?? { label: mode, tone: "neutral" };
+}
+
 export function toneLabel(tone: string | null | undefined): string {
   if (!tone) return "—";
   return TONE_OPTIONS.find((option) => option.value === tone)?.label ?? tone;
@@ -111,7 +142,7 @@ export function connectionModeLabel(mode: ConnectionMode): string {
 }
 
 /** Stage order for the timings table; unknown stages are appended alphabetically. */
-export const STAGE_ORDER: readonly string[] = ["queued", "analyzing", "voicing", "rendering", "delivering"];
+export const STAGE_ORDER: readonly string[] = ["queued", "analyzing", "notifying", "voicing", "rendering", "delivering"];
 
 export function orderedStageTimings(timings: Record<string, number>): [string, number][] {
   const entries = Object.entries(timings).filter(([, value]) => typeof value === "number" && Number.isFinite(value));

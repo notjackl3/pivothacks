@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { ComposioToolkit } from "@reelrelay/shared";
 import { config } from "../../config.js";
 
-export const ComposioToolkitSchema = z.enum(["gmail", "slack", "outlook", "whatsapp"]);
+export const ComposioToolkitSchema = z.enum(["gmail", "slack", "outlook", "whatsapp", "instagram"]);
 const StringMap = z.partialRecord(ComposioToolkitSchema, z.string().min(1));
 const ConfigMap = z.partialRecord(ComposioToolkitSchema, z.record(z.string(), z.unknown()));
 
