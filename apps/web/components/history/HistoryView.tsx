@@ -7,7 +7,7 @@ import type { MessageListItem } from "@reelrelay/shared";
 import { listMessages } from "@/lib/api";
 import { useInterval, useNow, useResource } from "@/lib/hooks";
 import { formatAbsoluteTime, formatRelativeTime } from "@/lib/format";
-import { anyJobActive, jobStatusMeta, replyStatusMeta, urgencyMeta } from "@/lib/status";
+import { anyJobActive, deliveryModeMeta, jobStatusMeta, replyStatusMeta, urgencyMeta } from "@/lib/status";
 import { AppShell } from "@/components/AppShell";
 import { Button, Chip, EmptyState, ErrorBanner, FullPageSpinner, LinkButton, MockBadge } from "@/components/ui";
 
@@ -97,6 +97,9 @@ function DesktopTable({ items, now }: { items: MessageListItem[]; now: number })
                 Urgency
               </th>
               <th scope="col" className="px-3 py-3 text-left font-semibold">
+                Delivery
+              </th>
+              <th scope="col" className="px-3 py-3 text-left font-semibold">
                 Status
               </th>
               <th scope="col" className="px-3 py-3 text-left font-semibold">
@@ -112,6 +115,7 @@ function DesktopTable({ items, now }: { items: MessageListItem[]; now: number })
               const status = jobStatusMeta(item.jobStatus);
               const reply = replyStatusMeta(item.replyStatus);
               const urgency = urgencyMeta(item.urgency);
+              const mode = deliveryModeMeta(item.deliveryMode);
               const href = `/history/${item.id}`;
               return (
                 <tr
@@ -136,6 +140,25 @@ function DesktopTable({ items, now }: { items: MessageListItem[]; now: number })
                       <Chip tone={urgency.tone} size="md">
                         {urgency.label}
                       </Chip>
+                    ) : (
+                      <span className="text-ink-faint">—</span>
+                    )}
+                  </td>
+                  <td className="max-w-[260px] px-3 py-4 align-middle">
+                    {mode ? (
+                      <div className="space-y-1">
+                        <Chip tone={mode.tone} size="md" dot={false} title={mode.hint}>
+                          {mode.label}
+                        </Chip>
+                        {item.reasonText && (
+                          <p className="truncate text-xs text-ink-muted" title={item.reasonText}>
+                            {item.reasonText}
+                          </p>
+                        )}
+                        {item.jobStatus === "held" && item.deliverAfter && (
+                          <p className="text-xs text-ink-faint">delivers {formatAbsoluteTime(item.deliverAfter)}</p>
+                        )}
+                      </div>
                     ) : (
                       <span className="text-ink-faint">—</span>
                     )}
@@ -174,6 +197,7 @@ function MobileList({ items, now }: { items: MessageListItem[]; now: number }) {
         const status = jobStatusMeta(item.jobStatus);
         const reply = replyStatusMeta(item.replyStatus);
         const urgency = urgencyMeta(item.urgency);
+        const mode = deliveryModeMeta(item.deliveryMode);
         return (
           <li key={item.id} className="rr-rise" style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}>
             <Link href={`/history/${item.id}`} className="block rounded-2xl border border-line bg-surface p-4 shadow-card active:bg-surface-muted">
@@ -193,6 +217,11 @@ function MobileList({ items, now }: { items: MessageListItem[]; now: number }) {
                 <Chip tone={status.tone} size="lg" active={Boolean(status.active)} title={status.hint}>
                   {status.label}
                 </Chip>
+                {mode && (
+                  <Chip tone={mode.tone} size="sm" dot={false} title={mode.hint}>
+                    {mode.label}
+                  </Chip>
+                )}
                 {urgency && (
                   <Chip tone={urgency.tone} size="sm">
                     {urgency.label}
@@ -204,6 +233,7 @@ function MobileList({ items, now }: { items: MessageListItem[]; now: number }) {
                   </Chip>
                 )}
               </div>
+              {item.reasonText && <p className="mt-2 text-xs text-ink-muted">{item.reasonText}</p>}
             </Link>
           </li>
         );

@@ -3,6 +3,7 @@ import type {
   ApproveReplyResponse,
   ConnectionMode,
   DeleteIntegrationResponse,
+  DeliverNowResponse,
   EntitiesResponse,
   IntegrationsResponse,
   MessageDetailResponse,
@@ -182,6 +183,11 @@ export function getMessage(id: string): Promise<MessageDetailResponse> {
 
 export function retryMessage(id: string): Promise<RetryJobResponse> {
   return request<RetryJobResponse>("POST", encodePath("messages", id, "retry"), {});
+}
+
+/** Pivot 03: release a held reel now instead of waiting for quiet hours / the digest slot. */
+export function deliverNow(id: string): Promise<DeliverNowResponse> {
+  return request<DeliverNowResponse>("POST", encodePath("messages", id, "deliver-now"), {});
 }
 
 // ───────────────────────────── replies ─────────────────────────────

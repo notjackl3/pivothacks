@@ -1,5 +1,5 @@
 // Dev B. getDelivery() → the DeliveryConnector Dev A's worker calls. TelegramDelivery when TELEGRAM_BOT_TOKEN is set, else a console fallback.
-import type { DeliveryConnector, ReelArtifact, ReplyDraft } from "@reelrelay/shared";
+import type { DeliveryConnector, DeliveryPlan, ReelArtifact, ReplyDraft } from "@reelrelay/shared";
 import { getBot } from "./telegram/bot.js";
 import { TelegramDelivery } from "./telegram/TelegramDelivery.js";
 
@@ -12,6 +12,14 @@ export class ConsoleDelivery implements DeliveryConnector {
   async sendDraft(_target: string, draft: ReplyDraft): Promise<string> {
     console.log(`[delivery:console] draft ${draft.id}`);
     return "console";
+  }
+  async sendInstantCard(_target: string, artifact: ReelArtifact, plan: DeliveryPlan): Promise<string> {
+    console.log(`[delivery:console] INSTANT card for message ${artifact.messageId}: ${plan.reasonText}`);
+    return "console-instant";
+  }
+  async sendText(_target: string, text: string): Promise<string> {
+    console.log(`[delivery:console] ${text}`);
+    return "console-text";
   }
 }
 

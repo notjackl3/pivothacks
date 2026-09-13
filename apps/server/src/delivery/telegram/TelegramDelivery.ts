@@ -1,6 +1,6 @@
 // Dev B. DeliveryConnector for Telegram (PLAN.md §10, §15). Formatting helpers are pure and exported for tests.
 import { readFile } from "node:fs/promises";
-import type { DeliveryConnector, MessageInterpretation, ReelArtifact, ReplyDraft } from "@reelrelay/shared";
+import type { DeliveryConnector, DeliveryPlan, MessageInterpretation, ReelArtifact, ReplyDraft } from "@reelrelay/shared";
 import { Input, type Telegraf } from "telegraf";
 import type { InlineKeyboardMarkup } from "telegraf/types";
 import { config } from "../../config.js";
@@ -52,14 +52,40 @@ export function formatTime(iso: string, timeZone = "America/Toronto"): string {
   }
 }
 
-/** `🎬 <sender> · Slack · <urgency>\n<shortTitle>\nAI-assisted translation` + `\n⚠️ demo-injected` when isMock. */
+/** Pivot 03: one line that explains the triage decision (`⚡ / ⏰ / ☀️ <reasonText>`), or "" when there is no plan. */
+export function formatPlanLine(plan: DeliveryPlan | undefined, followUp = false): string {
+  if (!plan) return "";
+  if (plan.mode === "instant") return followUp ? "🎬 Full reel for the card above" : `⚡ ${escapeHtml(plan.reasonText)}`;
+  const icon = plan.mode === "digest" ? "☀️" : plan.deliverAfter ? "⏰" : "";
+  return icon ? `${icon} ${escapeHtml(plan.reasonText)}` : "";
+}
+
+/** `🎬 <sender> · Slack · <urgency>\n<shortTitle>\n[plan line]\nAI-assisted translation` + `\n⚠️ demo-injected` when isMock. */
 export function formatReelCaption(artifact: ReelArtifact): string {
+  const planLine = formatPlanLine(artifact.plan, Boolean(artifact.replyToMessageId));
   const caption =
     `🎬 ${escapeHtml(artifact.senderDisplayName)} · ${sourceLabel(artifact.source)} · ${artifact.interpretation.urgency}` +
     `\n${escapeHtml(artifact.interpretation.shortTitle)}` +
+    (planLine ? `\n${planLine}` : "") +
     `\n${AI_TRANSLATION_LABEL}` +
     (artifact.isMock ? `\n${MOCK_LABEL}` : "");
   return truncate(caption, TELEGRAM_CAPTION_LIMIT);
+}
+
+/**
+ * Pivot 03: the instant card (HTML). Sent BEFORE voicing/rendering for high urgency, near deadlines and sensitive messages
+ * from authority figures: header, why it was sent now, the action list, then a note that the reel follows.
+ */
+export function formatInstantCard(artifact: ReelArtifact, plan: DeliveryPlan): string {
+  const interp = artifact.interpretation;
+  const parts = [
+    `⚡ <b>${escapeHtml(artifact.senderDisplayName)}</b> · ${sourceLabel(artifact.source)} · ${interp.urgency}\n<b>${escapeHtml(interp.shortTitle)}</b>`,
+    `<i>${escapeHtml(plan.reasonText)}</i>`,
+    escapeHtml(interp.hook),
+    `✅ <b>Actions</b>\n${formatActions(interp)}`,
+    ["🎬 Full reel is on its way", `<i>${AI_TRANSLATION_LABEL}</i>`, artifact.isMock ? MOCK_LABEL : ""].filter((p) => p.length > 0).join("\n"),
+  ];
+  return parts.join("\n\n");
 }
 
 /** `1. <text> — 📅 <dueText> — "<evidenceQuote>"`, negations prefixed 🚫, then `⚠️ Unclear:` ambiguities. HTML-escaped. */
@@ -112,7 +138,8 @@ export function formatTextCardParts(artifact: ReelArtifact): { summary: string; 
   }
 
   const header = `🎬 <b>${escapeHtml(artifact.senderDisplayName)}</b> · ${sourceLabel(artifact.source)} · ${interp.urgency}`;
-  const footer = [`<i>${AI_TRANSLATION_LABEL}</i>`, mockLine].filter((p) => p.length > 0).join("\n");
+  const planLine = formatPlanLine(artifact.plan, Boolean(artifact.replyToMessageId));
+  const footer = [planLine, `<i>${AI_TRANSLATION_LABEL}</i>`, mockLine].filter((p) => p.length > 0).join("\n");
   // A non-translation failure (video render, narration length, …) still gets the complete card, led by the notice.
   const notice = artifact.error ? `⚠️ ${escapeHtml(artifact.error.message)}\n\n` : "";
   const summary = [
@@ -296,8 +323,10 @@ export class TelegramDelivery implements DeliveryConnector {
   async sendReel(deliveryTargetId: string, artifact: ReelArtifact): Promise<string> {
     const chatId = await this.resolveChatId(deliveryTargetId);
     const keyboard = reelKeyboard(artifact.messageId);
+    // Pivot 03: a reel that follows an instant card threads under it (best effort: Telegram rejects a deleted target).
+    const threading = this.replyParameters(artifact);
     const wantsVideo = artifact.renderMode !== "text_only" && !artifact.error;
-    if (!wantsVideo) return this.sendTextCard(chatId, artifact, keyboard);
+    if (!wantsVideo) return this.sendTextCard(chatId, artifact, keyboard, threading);
 
     const video = await this.loadVideo(artifact);
     if (!video) {
@@ -314,7 +343,7 @@ export class TelegramDelivery implements DeliveryConnector {
         return this.sendTextCard(chatId, artifact, keyboard);
       }
       const text = `${caption}\n\n<a href="${escapeHtml(url)}">▶️ Watch the reel</a> (link valid for 1 hour)`;
-      const sent = await this.bot.telegram.sendMessage(chatId, text, { parse_mode: "HTML", reply_markup: keyboard });
+      const sent = await this.bot.telegram.sendMessage(chatId, text, { parse_mode: "HTML", reply_markup: keyboard, ...threading });
       return String(sent.message_id);
     }
 
@@ -323,8 +352,33 @@ export class TelegramDelivery implements DeliveryConnector {
       parse_mode: "HTML",
       reply_markup: keyboard,
       supports_streaming: true,
+      ...threading,
     });
     return String(sent.message_id);
+  }
+
+  /**
+   * Pivot 03: the instant card. One HTML message with the reel keyboard, so 📄 / ✅ / ✍️ / 👍 work before the reel exists.
+   * Sent with a notification (everything else stays quiet); the reel arrives later as a reply to this message.
+   */
+  async sendInstantCard(deliveryTargetId: string, artifact: ReelArtifact, plan: DeliveryPlan): Promise<string> {
+    const chatId = await this.resolveChatId(deliveryTargetId);
+    const keyboard = reelKeyboard(artifact.messageId);
+    const text = formatInstantCard(artifact, plan);
+    const sent = await withRetry(() => this.bot.telegram.sendMessage(chatId, truncate(text, TELEGRAM_TEXT_LIMIT), { parse_mode: "HTML", reply_markup: keyboard }));
+    return String(sent.message_id);
+  }
+
+  /** Pivot 03: plain line (digest header). Silent notification. */
+  async sendText(deliveryTargetId: string, text: string): Promise<string> {
+    const chatId = await this.resolveChatId(deliveryTargetId);
+    const sent = await withRetry(() => this.bot.telegram.sendMessage(chatId, truncate(text, TELEGRAM_TEXT_LIMIT), { disable_notification: true }));
+    return String(sent.message_id);
+  }
+
+  private replyParameters(artifact: ReelArtifact): { reply_parameters?: { message_id: number; allow_sending_without_reply: true } } {
+    const id = Number(artifact.replyToMessageId);
+    return Number.isInteger(id) && id > 0 ? { reply_parameters: { message_id: id, allow_sending_without_reply: true } } : {};
   }
 
   /** sendMessage(formatDraft) with draftKeyboard (or retrySendKeyboard for failed/send_uncertain). Returns String(message_id). */
@@ -350,13 +404,13 @@ export class TelegramDelivery implements DeliveryConnector {
     return chatId;
   }
 
-  private async sendTextCard(chatId: string, artifact: ReelArtifact, keyboard: InlineKeyboardMarkup): Promise<string> {
+  private async sendTextCard(chatId: string, artifact: ReelArtifact, keyboard: InlineKeyboardMarkup, threading: ReturnType<TelegramDelivery["replyParameters"]> = {}): Promise<string> {
     const html = { parse_mode: "HTML" as const };
     const { summary, actions } = formatTextCardParts(artifact);
     const full = actions ? `${summary}\n\n${actions}` : summary;
 
     if (full.length <= TELEGRAM_TEXT_SOFT_LIMIT) {
-      const sent = await this.bot.telegram.sendMessage(chatId, full, { ...html, reply_markup: keyboard });
+      const sent = await this.bot.telegram.sendMessage(chatId, full, { ...html, reply_markup: keyboard, ...threading });
       return String(sent.message_id);
     }
 

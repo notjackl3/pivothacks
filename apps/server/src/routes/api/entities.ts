@@ -1,7 +1,7 @@
 // Dev B. GET /api/integrations/:id/entities → { people }; PUT /api/tracked-entities → { entity }; GET /api/tracked-entities → { entities }.
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import type { EntitiesResponse, PutTrackedEntityResponse, TrackableEntity, TrackedEntitiesResponse } from "@reelrelay/shared";
+import { SenderRelationshipSchema, type EntitiesResponse, type PutTrackedEntityResponse, type TrackableEntity, type TrackedEntitiesResponse } from "@reelrelay/shared";
 import { requireUser } from "../../auth/requireUser.js";
 import { getSlackConnector } from "../../connectors/slack/SlackConnector.js";
 import { getConnectionForUser } from "../../db/queries/connections.js";
@@ -17,6 +17,8 @@ const PutTrackedEntityBody = z.object({
   displayName: z.string().trim().min(1).max(200),
   /** "channel" only in bot mode (PLAN.md §10). */
   entityType: z.enum(["person", "channel"]).default("person"),
+  /** Pivot 03: professor | employer | landlord | peer | other. */
+  relationship: SenderRelationshipSchema.optional(),
 });
 
 export async function registerEntitiesRoutes(api: FastifyInstance): Promise<void> {
@@ -59,6 +61,7 @@ export async function registerEntitiesRoutes(api: FastifyInstance): Promise<void
       entityType: body.entityType,
       externalEntityId: body.externalEntityId,
       displayName: body.displayName,
+      relationship: body.relationship,
     });
     return { entity: toApiTrackedEntity(row) } satisfies PutTrackedEntityResponse;
   });

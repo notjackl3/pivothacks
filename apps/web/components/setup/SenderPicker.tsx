@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useId, useMemo, useState, type FormEvent } from "react";
-import type { EntitiesResponse, EntityPerson, SlackIntegrationState, TrackedEntity } from "@reelrelay/shared";
+import type { EntitiesResponse, EntityPerson, SenderRelationship, SlackIntegrationState, TrackedEntity } from "@reelrelay/shared";
 import { describeError, getEntities, putTrackedEntity } from "@/lib/api";
 import { useResource } from "@/lib/hooks";
-import { Banner, Button, Card, Chip, Input, Label } from "@/components/ui";
+import { RELATIONSHIP_OPTIONS } from "@/lib/status";
+import { Banner, Button, Card, Chip, Input, Label, Select } from "@/components/ui";
 
 export interface SenderPickerProps {
   slack: SlackIntegrationState | null;
@@ -41,15 +42,18 @@ export function SenderPicker({ slack, tracked, onChanged, index = 0 }: SenderPic
     >
       <div className="space-y-4">
         {current && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-success/30 bg-success-soft px-4 py-3">
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-success">Currently tracking</p>
-              <p className="truncate text-base font-medium text-ink">
-                {current.displayName}
-                <span className="ml-2 font-mono text-xs text-ink-muted">{current.externalEntityId}</span>
-              </p>
+          <div className="space-y-3 rounded-xl border border-success/30 bg-success-soft px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-success">Currently tracking</p>
+                <p className="truncate text-base font-medium text-ink">
+                  {current.displayName}
+                  <span className="ml-2 font-mono text-xs text-ink-muted">{current.externalEntityId}</span>
+                </p>
+              </div>
+              <span className="text-xs text-ink-muted">{current.entityType === "channel" ? "Channel" : "Person"}</span>
             </div>
-            <span className="text-xs text-ink-muted">{current.entityType === "channel" ? "Channel" : "Person"}</span>
+            <RelationshipPicker current={current} onChanged={onChanged} />
           </div>
         )}
 
@@ -62,6 +66,44 @@ export function SenderPicker({ slack, tracked, onChanged, index = 0 }: SenderPic
         )}
       </div>
     </Card>
+  );
+}
+
+/** Pivot 03: who the sender is to the student. Saves immediately; changes narration register and the default reply tone. */
+function RelationshipPicker({ current, onChanged }: { current: TrackedEntity; onChanged: () => Promise<unknown> }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const id = useId();
+  const option = RELATIONSHIP_OPTIONS.find((o) => o.value === current.relationship) ?? RELATIONSHIP_OPTIONS[RELATIONSHIP_OPTIONS.length - 1]!;
+
+  async function save(relationship: SenderRelationship) {
+    setBusy(true);
+    setError(null);
+    try {
+      await putTrackedEntity({ connectionId: current.connectionId, externalEntityId: current.externalEntityId, displayName: current.displayName, entityType: current.entityType, relationship });
+      await onChanged();
+    } catch (err) {
+      setError(describeError(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-1.5">
+      {error && <Banner tone="danger" onDismiss={() => setError(null)}>{error}</Banner>}
+      <Label htmlFor={`${id}-relationship`} hint="changes tone and priority">
+        Who is this to you?
+      </Label>
+      <Select id={`${id}-relationship`} value={current.relationship} disabled={busy} onChange={(event) => void save(event.target.value as SenderRelationship)}>
+        {RELATIONSHIP_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </Select>
+      <p className="text-xs text-ink-faint">{option.hint}.</p>
+    </div>
   );
 }
 

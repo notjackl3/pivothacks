@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { MessageInterpretationSchema, ReplyDraftOutputSchema, type ComprehensionEngine, type ConversationContext, type MessageInterpretation, type NormalizedMessage, type ReplyDraftOutput, type ReplyTone, type UserPreferences } from "@reelrelay/shared";
+import { MessageInterpretationSchema, ReplyDraftOutputSchema, type AnalysisContext, type ComprehensionEngine, type ConversationContext, type MessageInterpretation, type NormalizedMessage, type ReplyDraftOutput, type ReplyTone, type UserPreferences } from "@reelrelay/shared";
 import { config, requireConfig } from "../config.js";
 import { checkFaithfulness } from "./faithfulness.js";
 import { interpretationInput, interpretationSystem, replyInput, replySystem } from "./prompts.js";
@@ -41,12 +41,12 @@ export class ClaudeEngine implements ComprehensionEngine {
       throw error;
     }
   }
-  async analyze(message: NormalizedMessage, prefs: UserPreferences): Promise<MessageInterpretation> {
-    return this.analyzeWithInstruction(message, prefs);
+  async analyze(message: NormalizedMessage, prefs: UserPreferences, context?: AnalysisContext): Promise<MessageInterpretation> {
+    return this.analyzeWithInstruction(message, prefs, undefined, context);
   }
-  async analyzeWithInstruction(message: NormalizedMessage, prefs: UserPreferences, extra?: string): Promise<MessageInterpretation> {
+  async analyzeWithInstruction(message: NormalizedMessage, prefs: UserPreferences, extra?: string, context?: AnalysisContext): Promise<MessageInterpretation> {
     const started = performance.now();
-    const request: ParseRequest = { kind: "interpretation", system: interpretationSystem(message, prefs, this.options.now?.()), effort: this.effort, messages: [{ role: "user", content: interpretationInput(message, extra) }] };
+    const request: ParseRequest = { kind: "interpretation", system: interpretationSystem(message, prefs, this.options.now?.(), context), effort: this.effort, messages: [{ role: "user", content: interpretationInput(message, extra) }] };
     let refusal = false;
     try {
       for (let attempt = 0; attempt < 2; attempt++) {

@@ -44,6 +44,8 @@ const EnvSchema = z.object({
   ENGINE_MODE: z.enum(["live", "stub"]).default("live"),
   PIPELINE_MODE: z.enum(["video", "text"]).default("video"),
   DATA_DIR: z.string().default("build/reelrelay"),
+  /** Pivot 03 demo: fixed clock (ISO) for the triage router and the held-job scheduler. POST /api/demo/clock overrides at runtime. */
+  DEMO_NOW: z.preprocess((v) => v === "" ? undefined : v, z.string().datetime({ offset: true }).optional()),
 });
 export const config = EnvSchema.parse(process.env);
 export const dataDir = path.resolve(repoRoot, config.DATA_DIR);

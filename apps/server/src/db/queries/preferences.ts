@@ -2,7 +2,7 @@
 import { ReplyToneSchema, UserPreferencesSchema, type UserPreferences } from "@reelrelay/shared";
 import { supabase } from "../client.js";
 
-const PREFERENCE_COLUMNS = "target_language, timezone, reply_tone";
+const PREFERENCE_COLUMNS = "target_language, timezone, reply_tone, quiet_start, quiet_end";
 
 /** Query files must not import from routes: the api error handler maps any { statusCode, code } error to the envelope. */
 function dbError(message: string): Error {
@@ -19,6 +19,9 @@ interface PreferencesRow {
   target_language: string;
   timezone: string;
   reply_tone: string;
+  /** Pivot 03 (migration 0002); null until the migration runs. */
+  quiet_start?: string | null;
+  quiet_end?: string | null;
 }
 
 interface UsersRow {
@@ -33,6 +36,8 @@ function toApiPreferences(row: PreferencesRow): UserPreferences {
     targetLanguage: row.target_language || DEFAULT_PREFERENCES.targetLanguage,
     timezone: row.timezone || DEFAULT_PREFERENCES.timezone,
     replyTone: tone.success ? tone.data : DEFAULT_PREFERENCES.replyTone,
+    quietStart: row.quiet_start || DEFAULT_PREFERENCES.quietStart,
+    quietEnd: row.quiet_end || DEFAULT_PREFERENCES.quietEnd,
   };
 }
 
@@ -66,6 +71,8 @@ export async function updatePreferences(userId: string, patch: Partial<UserPrefe
   if (patch.targetLanguage !== undefined) row.target_language = patch.targetLanguage;
   if (patch.timezone !== undefined) row.timezone = patch.timezone;
   if (patch.replyTone !== undefined) row.reply_tone = patch.replyTone;
+  if (patch.quietStart !== undefined) row.quiet_start = patch.quietStart;
+  if (patch.quietEnd !== undefined) row.quiet_end = patch.quietEnd;
 
   // PostgREST's upsert only writes the columns present in the payload, so absent keys keep their stored
   // values (or take the column defaults when the row is created here).

@@ -3,10 +3,10 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import type { ReplyDraftRecord, ReplyTone } from "@reelrelay/shared";
-import { ApiClientError, approveReply, describeError, getMessage, regenerateReply, retryMessage, retrySendReply } from "@/lib/api";
+import { ApiClientError, approveReply, deliverNow, describeError, getMessage, regenerateReply, retryMessage, retrySendReply } from "@/lib/api";
 import { useAsyncAction, useInterval, useNow, useResource } from "@/lib/hooks";
 import { formatAbsoluteTime, formatRelativeTime } from "@/lib/format";
-import { isJobTerminal, jobStatusMeta, messageSourceLabel, urgencyMeta } from "@/lib/status";
+import { deliveryModeMeta, isJobTerminal, jobStatusMeta, messageSourceLabel, urgencyMeta } from "@/lib/status";
 import { AppShell } from "@/components/AppShell";
 import { Banner, Button, Chip, EmptyState, ErrorBanner, FullPageSpinner, MockBadge } from "@/components/ui";
 import { JobStatus } from "@/components/history/JobStatus";
@@ -53,6 +53,15 @@ export function MessageDetail({ id }: { id: string }) {
     },
     [refresh],
   );
+
+  const handleDeliverNow = useCallback(() => {
+    void run(`deliver-now:${id}`, () =>
+      withConflictNotice(async () => {
+        await deliverNow(id);
+        setNotice("Released. The scheduler delivers it within about 10 seconds.");
+      }),
+    );
+  }, [id, run, withConflictNotice]);
 
   const handleRetryJob = useCallback(() => {
     void run(`retry:${id}`, () =>
@@ -138,6 +147,7 @@ export function MessageDetail({ id }: { id: string }) {
   const { message, job, artifact, drafts } = data;
   const statusMeta = jobStatusMeta(jobStatus);
   const urgency = urgencyMeta(artifact?.interpretation?.urgency);
+  const mode = deliveryModeMeta(job?.deliveryPlan?.mode);
 
   return (
     <AppShell
@@ -159,6 +169,11 @@ export function MessageDetail({ id }: { id: string }) {
           {urgency && (
             <Chip tone={urgency.tone} size="sm">
               {urgency.label} urgency
+            </Chip>
+          )}
+          {mode && (
+            <Chip tone={mode.tone} size="sm" dot={false} title={mode.hint}>
+              {mode.label}
             </Chip>
           )}
           {artifact?.renderMode && artifact.renderMode !== "remotion" && (
@@ -186,7 +201,7 @@ export function MessageDetail({ id }: { id: string }) {
           </Banner>
         )}
 
-        <JobStatus job={job} onRetry={handleRetryJob} retrying={busyKey === `retry:${id}`} polling={polling} index={0} />
+        <JobStatus job={job} onRetry={handleRetryJob} retrying={busyKey === `retry:${id}`} onDeliverNow={handleDeliverNow} releasing={busyKey === `deliver-now:${id}`} polling={polling} index={0} />
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
           <ReelPlayer artifact={artifact} jobStatus={jobStatus} index={1} />

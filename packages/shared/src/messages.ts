@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { MessageInterpretation, ReplyTone, TimedInterpretation } from "./interpretation.js";
 import type { UserPreferences } from "./preferences.js";
+import type { DeliveryPlan } from "./delivery.js";
 
 export const NormalizedMessageSchema = z.object({
   provider: z.enum(["slack", "mock"]),
@@ -14,7 +15,8 @@ export const NormalizedMessageSchema = z.object({
   receivedAt: z.string().datetime(),
 });
 export type NormalizedMessage = z.infer<typeof NormalizedMessageSchema>;
-export const JobStatusSchema = z.enum(["queued", "analyzing", "voicing", "rendering", "delivering", "complete", "failed"]);
+/** notifying = instant text card going out before the reel; held = rendered, waiting for deliver_after (quiet hours / digest slot). */
+export const JobStatusSchema = z.enum(["queued", "analyzing", "notifying", "voicing", "rendering", "held", "delivering", "complete", "failed"]);
 export type JobStatus = z.infer<typeof JobStatusSchema>;
 export type RenderMode = "remotion" | "captions_only" | "text_only";
 
@@ -38,6 +40,10 @@ export type ReelArtifact = {
   originalText: string;
   /** When set, show this notice and the original; do not label the content a translation. */
   error?: { code: string; message: string };
+  /** Pivot 03: the triage decision behind this delivery (caption line, chips). */
+  plan?: DeliveryPlan;
+  /** Telegram message id of the instant card this reel follows up; the connector may thread under it. */
+  replyToMessageId?: string | null;
 };
 
 export type ConversationContext = {

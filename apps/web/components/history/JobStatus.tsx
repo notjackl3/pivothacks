@@ -2,21 +2,26 @@
 
 import type { MessageDetailResponse } from "@reelrelay/shared";
 import { formatAbsoluteTime, formatMs, formatSeconds } from "@/lib/format";
-import { isJobTerminal, jobStatusMeta, orderedStageTimings } from "@/lib/status";
+import { deliveryModeMeta, isJobTerminal, jobStatusMeta, orderedStageTimings, relationshipLabel, toneLabel } from "@/lib/status";
 import { Button, Card, Chip, KeyValue } from "@/components/ui";
 
 export interface JobStatusProps {
   job: MessageDetailResponse["job"];
   onRetry: () => void;
   retrying: boolean;
+  /** Pivot 03: release a held job. */
+  onDeliverNow?: () => void;
+  releasing?: boolean;
   polling: boolean;
   index?: number;
 }
 
 /** Job state, per-stage timings in milliseconds, the error when it failed, and Retry. */
-export function JobStatus({ job, onRetry, retrying, polling, index = 0 }: JobStatusProps) {
+export function JobStatus({ job, onRetry, retrying, onDeliverNow, releasing = false, polling, index = 0 }: JobStatusProps) {
   const status = job?.status ?? "queued";
   const meta = jobStatusMeta(status);
+  const plan = job?.deliveryPlan ?? null;
+  const mode = deliveryModeMeta(plan?.mode);
   const timings = orderedStageTimings(job?.stageTimings ?? {});
   const total = timings.reduce((sum, [, ms]) => sum + ms, 0);
   const canRetry = status === "failed" && (job?.attemptCount ?? 0) < 3;
@@ -52,7 +57,32 @@ export function JobStatus({ job, onRetry, retrying, polling, index = 0 }: JobSta
             </div>
           )}
 
+          {plan && mode && (
+            <div className="space-y-2 rounded-xl border border-line bg-surface-muted px-4 py-3 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint">Triage</p>
+                <Chip tone={mode.tone} size="md" dot={false} title={mode.hint}>
+                  {mode.label}
+                </Chip>
+              </div>
+              <p className="text-ink">{plan.reasonText}</p>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-ink-muted sm:grid-cols-3">
+                <div><dt className="text-ink-faint">Urgency</dt><dd className="capitalize">{plan.context.urgency}</dd></div>
+                <div><dt className="text-ink-faint">Deadline</dt><dd>{plan.context.hoursToDeadline === null ? "none pinned" : `in ${plan.context.hoursToDeadline} h`}</dd></div>
+                <div><dt className="text-ink-faint">Sender</dt><dd>{relationshipLabel(plan.context.relationship)}</dd></div>
+                <div><dt className="text-ink-faint">Local time</dt><dd className="font-mono">{plan.context.localTime}{plan.context.inQuietHours ? " · quiet" : ""}</dd></div>
+                <div><dt className="text-ink-faint">Reply tone</dt><dd>{toneLabel(plan.replyTone)}</dd></div>
+                <div><dt className="text-ink-faint">Delivers</dt><dd>{job?.deliverAfter && status === "held" ? formatAbsoluteTime(job.deliverAfter) : plan.deliverAfter ? formatAbsoluteTime(plan.deliverAfter) : "immediately"}</dd></div>
+              </dl>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-3">
+            {status === "held" && onDeliverNow && (
+              <Button onClick={onDeliverNow} loading={releasing} size="lg" variant="secondary">
+                Deliver now
+              </Button>
+            )}
             {status === "failed" && (
               <Button onClick={onRetry} loading={retrying} disabled={!canRetry} size="lg">
                 Retry

@@ -16,6 +16,7 @@ import { getSession, setSessionState } from "../../db/queries/telegram.js";
 import { getPreferences, getUserProfile, studentNameFor } from "../../db/queries/preferences.js";
 import { getSlackConnector } from "../../connectors/slack/SlackConnector.js";
 import { getEngine } from "../../engine/index.js";
+import { getJob } from "../../db/queries/jobs.js";
 import { getInterpretationForMessage, getMessageForUser, toNormalizedMessage } from "./store.js";
 
 export interface ReplyFlowDeps {
@@ -38,6 +39,8 @@ export interface ReplyFlowDeps {
   prefs: {
     getPreferences: (userId: string) => Promise<UserPreferences>;
     studentName: (userId: string) => Promise<string>;
+    /** Pivot 03: tone chosen by the triage router for this message (sender relationship), or null. */
+    planTone?: (messageId: string) => Promise<ReplyTone | null>;
   };
   slack: {
     sendReply: (message: NormalizedMessage, text: string) => Promise<{ externalMessageId: string }>;
@@ -147,7 +150,8 @@ export function createReplyFlow(deps: ReplyFlowDeps): ReplyFlow {
 
   async function draftFor(userId: string, message: StoredMessage, userInput: string, tone?: ReplyTone): Promise<ReplyDraftRecord> {
     const { ctx, prefs } = await buildContext(userId, message);
-    const effectiveTone = tone ?? prefs.replyTone;
+    const planTone = tone ? null : await deps.prefs.planTone?.(message.id).catch(() => null);
+    const effectiveTone = tone ?? planTone ?? prefs.replyTone;
     const out = await deps.engine().draftReply(ctx, userInput, effectiveTone);
     const draft = await deps.drafts.insertDraft({
       messageId: message.id,
@@ -304,6 +308,7 @@ export function getReplyFlow(): ReplyFlow {
       prefs: {
         getPreferences,
         studentName: async (userId) => studentNameFor(await getUserProfile(userId)),
+        planTone: async (messageId) => (await getJob(messageId))?.delivery_plan?.replyTone ?? null,
       },
       slack: {
         sendReply: (message, text) => getSlackConnector().sendReply(message, text),
