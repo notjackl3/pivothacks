@@ -1,7 +1,8 @@
 import type { ActionItem } from "@reelrelay/shared";
 
 export const FPS = 30;
-export const BODY_START_MS = 3500;
+export const BODY_START_MS = 0;
+export const HOOK_MS = 3500;
 export const ACTION_GAP_MS = 300;
 export const ACTION_PAGE_MS = 3500;
 export const OUTRO_MS = 2000;

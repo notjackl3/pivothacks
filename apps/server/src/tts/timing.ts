@@ -1,5 +1,5 @@
 import { BODY_START_MS, totalDurationMs } from "@reelrelay/reel/timing";
-import { captionChunks, captionUnits } from "@reelrelay/reel/captions";
+import { attachCaptionTranslations, captionChunks, captionUnits } from "@reelrelay/reel/captions";
 import type { CaptionSegment, MessageInterpretation, TimedInterpretation } from "@reelrelay/shared";
 
 export type CharacterAlignment = {
@@ -63,7 +63,8 @@ export function captionsOnlyTiming(segments: string[]): { narrationMs: number; c
 export function withTiming(interp: MessageInterpretation, timing: { narrationMs: number; captionSegments: CaptionSegment[] }): TimedInterpretation {
   validateCaptionTiming(timing.captionSegments, timing.narrationMs);
   if (timing.captionSegments.map((segment) => clean(segment.text)).join("") !== interp.spokenSegments.map(clean).join("")) throw new Error("Captions must reproduce the complete narration.");
-  return { ...interp, ...timing, totalMs: totalDurationMs(timing.narrationMs, interp.actionItems.length) };
+  const captionSegments = attachCaptionTranslations(timing.captionSegments, interp.spokenSegments, interp.captionTranslation?.spokenSegments);
+  return { ...interp, ...timing, captionSegments, totalMs: totalDurationMs(timing.narrationMs, interp.actionItems.length) };
 }
 export function validateCaptionTiming(segments: CaptionSegment[], narrationMs: number): void {
   let previousEnd = BODY_START_MS;

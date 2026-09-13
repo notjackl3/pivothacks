@@ -14,7 +14,8 @@
     "demo:inject": "tsx scripts/inject-demo.ts",
     "smoke:e2e": "tsx scripts/smoke-e2e.ts",
     "reel:preview": "pnpm --filter @reelrelay/reel preview",
-    "reel:render": "tsx scripts/render-demo.ts"
+    "reel:render": "tsx scripts/render-demo.ts",
+    "reel:watch": "tsx scripts/watch-demo.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.2",

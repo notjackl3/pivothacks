@@ -8,12 +8,22 @@ The command exports the synthetic Chinese demo to
 `build/demo/professor_deadline.mp4`, with a JSON artifact alongside it. Install
 `ffprobe` and Chrome/Edge before rendering on Windows.
 
-The video includes looping Subway Surfers gameplay, narration, timed phrase
-captions, all action pages, and embedded gameplay attribution. `pnpm reel:preview`
-opens the composition in Remotion Studio. `pnpm reel:render --silent` exports an
+The video includes looping Subway Surfers gameplay, Chinese narration starting
+immediately, Chinese captions with English translations, bilingual action pages,
+and embedded gameplay attribution. `pnpm reel:preview` opens the composition in
+Remotion Studio with a bundled, voiced demo sample. `pnpm reel:watch` serves the
+exported MP4 at `http://localhost:4010` with a Play with sound button and a download
+link. Pass `--file build/demo/professor_deadline.bilingual.mp4` to watch that export.
+`pnpm reel:render --silent` exports an
 explicitly silent preview. `pnpm reel:render --input message.json` accepts
 `{ originalText, senderDisplayName, interpretation: MessageInterpretation }`.
 See `scripts/VIDEO-GEN-PLAN.md` for the complete run instructions.
+
+For bilingual custom input, provide `interpretation.captionTranslation` with
+`language`, `hook`, and `spokenSegments`. The translated segments must match the
+primary narration's segment count and order. The schema asks the live engine for
+English translations of non-English narration. Old records without this optional
+field retain their existing captions; the renderer does not invent a translation.
 
 The worker already calls the updated `synthesizeSpeech` → `withTiming` →
 `RemotionRenderer` path. `ReelArtifact` and the delivery contract are unchanged;

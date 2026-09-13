@@ -4,7 +4,7 @@
 
 A vertical ReelRelay video in the Reddit-story format: looping Subway Surfers
 gameplay, conversational narration in the recipient's language, and large captions
-that pop in sync. Preserve every deadline, requirement, prohibition, and important
+that pop in sync, with English translations underneath. Preserve every deadline, requirement, prohibition, and important
 fact from the source message. Start with the existing Chinese demo fixture.
 
 The deliverable is one playable, narrated H.264 MP4 at 720 × 1280 and 30 fps,
@@ -14,7 +14,8 @@ Aim for roughly 30–45 seconds of narration; allow extra time for all action ca
 ## Existing pieces to reuse
 
 - `packages/reel/src/ReelComposition.tsx`: hook, narration, captions, action pages,
-  and outro. The initial narration offset is 3.5 seconds.
+  and outro. Narration begins immediately; the compact hook shares the opening
+  3.5 seconds with the first captions.
 - `apps/server/src/tts/elevenlabs.ts`: speech synthesis and audio-duration probing.
 - `apps/server/src/tts/timing.ts`: character-alignment mapping into caption times.
 - `apps/server/src/render/RemotionRenderer.ts`: local H.264 rendering, bundled
@@ -34,7 +35,7 @@ interpretation. The video handoff stays `ReelArtifact`, including a local
 | --- | --- | --- |
 | 0–5 | Set `ELEVENLABS_API_KEY` locally; optionally pin `ELEVENLABS_VOICE_ID`. Check that `ffprobe` and Chrome/Edge are available. | Narration prerequisites are ready. |
 | 5–15 | Add `GameplayBackground.tsx` and replace the calm background in the composition. Use the local MP4, muted, covering the full frame. Loop its 1,800 frames. | Gameplay runs continuously behind the content in Studio. |
-| 15–30 | Restyle `Captions.tsx`: large white text, a strong dark outline, a small pop at each phrase boundary, and at most two readable lines. Keep the sender/title compact and make the hook visible from the first frame. | The video has the requested story format and readable captions. |
+| 15–30 | Restyle `Captions.tsx`: large white text, a strong dark outline, a small pop at each phrase boundary, and readable bilingual lines. Keep the sender/title compact and make the hook visible from the first frame. | The video has the requested story format and readable captions. |
 | 30–45 | Add `scripts/render-demo.ts` that loads the existing professor interpretation, calls `synthesizeSpeech`, applies `withTiming`, and invokes `RemotionRenderer`. Mark fixture output as demo content. | A single local command drives the actual speech-to-video path. |
 | 45–50 | Inspect a few rendered frames and fix clipping or layout problems. Run the changed packages' typecheck once if needed. | The composition is ready for the final export. |
 | 50–60 | Export the full MP4, watch it with sound, confirm the last spoken sentence and every action card are present, save the demo copy, and push the finished files as Vy Tran. | A playable demo artifact and code the teammate can pull. |
@@ -46,8 +47,8 @@ Use `staticFile("gameplay/subway-surfers.mp4")` as the source.
 
 ## Scope and integration decisions
 
-- Use the existing narration offset and duration helpers consistently across
-  audio, captions, sample props, and the renderer. Show the hook during the intro.
+- Use the shared narration offset and duration helpers consistently across
+  audio, captions, sample props, and the renderer. Show the hook above the opening captions.
 - Use the existing phrase timestamps for this milestone. Exact per-word
   highlighting can follow after the first complete export.
 - Preserve the paged action recap; every item must remain visible. Give text
@@ -88,13 +89,25 @@ pnpm reel:render professor_deadline --output build/demo/pitch.mp4
 pnpm reel:render --input message.json --output build/demo/custom.mp4
 pnpm reel:render --silent
 pnpm reel:preview
+pnpm reel:watch
 ```
 
 Custom JSON must contain `originalText`, `senderDisplayName`, and an
 `interpretation` matching the shared `MessageInterpretation` schema. The script
 only renders the supplied interpretation; it does not call the translation
 engine. Local exports are labeled DEMO and need no database or messaging
-accounts. Studio opens an interactive, silent composition preview.
+accounts. Studio includes a local narrated sample and its actual caption timing.
+The narration starts immediately. `pnpm reel:watch` serves the exported MP4 at
+`http://localhost:4010`; click Play with sound to start unmuted. Use
+`pnpm reel:watch --file build/demo/professor_deadline.bilingual.mp4` for a named
+export. The player binds only to localhost and serves the selected video.
+
+For both languages on screen, add `interpretation.captionTranslation` with
+`language: "en"`, an English `hook`, and `spokenSegments` containing exactly one
+translation per primary segment. Translations stay visible across each sentence's
+short caption phrases. The source narration and its timing remain intact. The
+synthetic professor fixture includes these translations. Older interpretations
+without the optional field remain supported.
 
 Narrated export fails clearly if ElevenLabs or audio probing fails. `--silent`
 explicitly selects a caption-only preview without calling ElevenLabs. The
@@ -108,11 +121,14 @@ paged recap. Background credit is embedded in the video and documented in
 
 ## Handoff
 
-The first narrated export completed in 168 seconds, including voice generation
-and the initial bundle. The MP4 is 32.15 seconds, 720 × 1280 at 30 fps, H.264 with
-AAC audio, and 10,137,445 bytes. Fifteen caption phrases cover the complete
-narration, and both recap pages show all four actions. Rendered intro, caption,
-action, and outro frames were inspected; audio decoding and timing were checked.
+The bilingual export completed in 110 seconds, including fresh voice generation.
+`build/demo/professor_deadline.bilingual.mp4` is 30.89 seconds, 720 × 1280 at 30 fps,
+H.264 with AAC audio, and 9,542,481 bytes. All fifteen caption phrases have English
+translations; both recap pages show all four actions. Narration begins immediately
+and runs through 21.55 seconds. Opening, caption, action, and outro frames were
+inspected; audio decoding and volume were checked. The local player returned
+HTTP 200 for the page and HTTP 206 for a media range request. Browser playback
+could not be inspected because no browser was connected to the session.
 Server and reel typechecks passed. No test suites were run.
 
 Provide the teammate with the exact render command, the exported MP4 path, the

@@ -20,6 +20,11 @@ export const MessageInterpretationSchema = z.object({
   faithfulTranslation: z.string().min(1),
   hook: z.string().min(1).max(60),
   spokenSegments: z.array(z.string().min(1).max(60)).min(2).max(30),
+  captionTranslation: z.object({
+    language: z.string().min(1),
+    hook: z.string().min(1).max(120),
+    spokenSegments: z.array(z.string().min(1).max(180)).min(2).max(30),
+  }).optional().describe("For a non-English target language, always provide an English caption translation: language=en, an English hook, and exactly one English translation per spokenSegments entry in the same order. Preserve every fact and negation. These are subtitles only; keep the narration in the target language."),
   shortTitle: z.string().min(1).max(60),
   senderIntent: z.string().min(1).max(300),
   urgency: z.enum(["low", "medium", "high"]),
@@ -31,7 +36,7 @@ export const MessageInterpretationSchema = z.object({
 });
 export type MessageInterpretation = z.infer<typeof MessageInterpretationSchema>;
 
-export const CaptionSegmentSchema = z.object({ text: z.string(), startMs: z.number().int(), endMs: z.number().int() });
+export const CaptionSegmentSchema = z.object({ text: z.string(), translation: z.string().optional(), startMs: z.number().int(), endMs: z.number().int() });
 export type CaptionSegment = z.infer<typeof CaptionSegmentSchema>;
 export const TimedInterpretationSchema = MessageInterpretationSchema.extend({
   captionSegments: z.array(CaptionSegmentSchema).min(1),

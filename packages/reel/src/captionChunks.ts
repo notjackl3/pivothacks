@@ -1,3 +1,5 @@
+import type { CaptionSegment } from "@reelrelay/shared";
+
 const cjk = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
 const words = new Intl.Segmenter("en", { granularity: "word" });
 
@@ -23,4 +25,25 @@ export function captionChunks(segments: string[]): string[] {
     if (current.trim()) chunks.push(current.trim());
     return chunks;
   });
+}
+
+/** Keep the translated sentence visible across all of its short timed phrases. */
+export function attachCaptionTranslations(captions: CaptionSegment[], segments: string[], translations?: string[]): CaptionSegment[] {
+  if (!translations) return captions;
+  if (translations.length !== segments.length || translations.some((text) => !text.trim())) {
+    throw new Error("Each narration segment needs exactly one caption translation.");
+  }
+  const clean = (text: string) => text.normalize("NFKC").replace(/\s/gu, "");
+  let segmentIndex = 0;
+  let consumed = "";
+  const result = captions.map((caption) => {
+    const source = clean(segments[segmentIndex] ?? "");
+    consumed += clean(caption.text);
+    if (!source || !source.startsWith(consumed)) throw new Error("Caption translation does not match the narration boundaries.");
+    const translation = translations[segmentIndex];
+    if (consumed === source) { segmentIndex++; consumed = ""; }
+    return { ...caption, translation };
+  });
+  if (segmentIndex !== segments.length || consumed) throw new Error("Caption translations must cover the complete narration.");
+  return result;
 }
