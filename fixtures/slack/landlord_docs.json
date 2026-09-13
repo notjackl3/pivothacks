@@ -1,0 +1,27 @@
+{
+  "token": "PLACEHOLDER_VERIFICATION_TOKEN",
+  "team_id": "T0000EXAMPLE",
+  "api_app_id": "A0000EXAMPLE",
+  "type": "event_callback",
+  "event_id": "Ev0000EXAMPLE2",
+  "event_time": 1789308001,
+  "event_context": "1-message-T0000EXAMPLE-D0000EXAMPLE",
+  "authorizations": [
+    {
+      "enterprise_id": null,
+      "team_id": "T0000EXAMPLE",
+      "user_id": "U0000STUDENT",
+      "is_bot": false,
+      "is_enterprise_install": false
+    }
+  ],
+  "event": {
+    "type": "message",
+    "channel": "D0000EXAMPLE",
+    "channel_type": "im",
+    "user": "U0000PROFESSOR",
+    "text": "Hi Jack, please send the rent receipt for $1,250 and your signed lease PDF to housing@example.edu by Friday at 4:00 PM. Do not send a photo of your bank card. This is a documentation request, not a new payment request.",
+    "ts": "1789308001.000200",
+    "event_ts": "1789308001.000200"
+  }
+}

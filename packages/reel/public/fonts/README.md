@@ -1,0 +1,1 @@
+Noto Sans and Noto Sans SC are distributed under the SIL Open Font License. The full variable fonts are loaded at weight 700 and named `*-Bold.ttf` to match the plan. Sources and repeatable download steps are in `scripts/setup-fonts.mjs`; the accompanying OFL files contain the license notices.

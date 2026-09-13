@@ -1,0 +1,10 @@
+{
+  "senderDisplayName": "Professor Chen",
+  "mustContain": [
+    "Quercus",
+    "Slack",
+    "11:59 PM",
+    "5:00 PM",
+    "Wednesday"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "senderDisplayName": "Sam, shift manager",
+  "mustContain": [
+    "https://example.com/checklist",
+    "9:00 AM",
+    "6:00 PM",
+    "B214"
+  ]
+}

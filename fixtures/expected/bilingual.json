@@ -1,0 +1,8 @@
+{
+  "senderDisplayName": "Residence desk",
+  "mustContain": [
+    "https://example.com/residence",
+    "3:30 PM",
+    "PDF"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "senderDisplayName": "Campus club",
+  "mustContain": [
+    "Wednesday",
+    "next Friday",
+    "204"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "senderDisplayName": "Alex, property manager",
+  "mustContain": [
+    "$1,250",
+    "Friday at 4:00 PM",
+    "housing@example.edu"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@reelrelay/reel",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./timing": "./src/timing.ts"
+  },
+  "scripts": {
+    "preview": "remotion studio src/index.ts",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@reelrelay/shared": "workspace:*",
+    "@remotion/cli": "4.0.524",
+    "@remotion/fonts": "4.0.524",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "remotion": "4.0.524"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0"
+  }
+}

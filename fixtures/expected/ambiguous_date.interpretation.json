@@ -1,0 +1,47 @@
+{
+  "sourceLanguage": "en",
+  "targetLanguage": "zh-CN",
+  "faithfulTranslation": "请在 Wednesday 前回复是否参加工作坊。我们将于 next Friday 在 Room 204 见面。我正在旅行，所以还没有确认时区或开始时间。",
+  "hook": "先回复报名，再确认时间。",
+  "spokenSegments": [
+    "请在周三前回复 RSVP。",
+    "活动拟于下周五在204室举行。",
+    "开始时间、时区和具体日期仍需确认。"
+  ],
+  "shortTitle": "活动日期需要确认",
+  "senderIntent": "请在 Wednesday 前回复是否参加工作坊。我们将于 next Friday 在 Room 204 见面。我正在旅行，所以还没有确认时区或开始时间。",
+  "urgency": "high",
+  "isSensitive": true,
+  "actionItems": [
+    {
+      "text": "请在周三前回复 RSVP。",
+      "textEnglish": "Send RSVP by Wednesday",
+      "evidenceQuote": "Please send your RSVP for the workshop by Wednesday.",
+      "dueText": "Wednesday",
+      "dueAt": null,
+      "isNegation": false,
+      "essential": true
+    }
+  ],
+  "preservedFacts": [
+    {
+      "label": "rsvp",
+      "value": "Wednesday"
+    },
+    {
+      "label": "meeting",
+      "value": "next Friday"
+    },
+    {
+      "label": "room",
+      "value": "Room 204"
+    }
+  ],
+  "ambiguities": [
+    "Wednesday 和 next Friday 的具体日期不明确。",
+    "时区和开始时间尚未确认。"
+  ],
+  "suggestedClarifyingQuestions": [
+    "请问这里指的是哪一个具体日期？"
+  ]
+}

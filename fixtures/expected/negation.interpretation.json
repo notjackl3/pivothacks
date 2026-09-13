@@ -1,0 +1,70 @@
+{
+  "sourceLanguage": "en",
+  "targetLanguage": "zh-CN",
+  "faithfulTranslation": "不要把 ZIP 文件提交到 Quercus。请在 Sunday at 11:59 PM 前只提交 PDF。绝不要在报告里写入密码。保留提交回执副本。",
+  "hook": "请注意两条禁止事项。",
+  "spokenSegments": [
+    "不要把 ZIP 文件提交到 Quercus。",
+    "周日晚上11:59前只提交 PDF。",
+    "不要在报告里写入密码。",
+    "保留提交回执副本。"
+  ],
+  "shortTitle": "只交 PDF，保护密码",
+  "senderIntent": "不要把 ZIP 文件提交到 Quercus。请在 Sunday at 11:59 PM 前只提交 PDF。绝不要在报告里写入密码。保留提交回执副本。",
+  "urgency": "high",
+  "isSensitive": true,
+  "actionItems": [
+    {
+      "text": "不要把 ZIP 文件提交到 Quercus。",
+      "textEnglish": "Do not submit the ZIP file to Quercus",
+      "evidenceQuote": "Do not submit the ZIP file to Quercus.",
+      "dueText": null,
+      "dueAt": null,
+      "isNegation": true,
+      "essential": true
+    },
+    {
+      "text": "周日晚上11:59前只提交 PDF。",
+      "textEnglish": "Submit only the PDF",
+      "evidenceQuote": "Submit only the PDF by Sunday at 11:59 PM.",
+      "dueText": "Sunday at 11:59 PM",
+      "dueAt": null,
+      "isNegation": false,
+      "essential": true
+    },
+    {
+      "text": "不要在报告里写入密码。",
+      "textEnglish": "Never include your password in the report",
+      "evidenceQuote": "Never include your password in the report.",
+      "dueText": null,
+      "dueAt": null,
+      "isNegation": true,
+      "essential": true
+    },
+    {
+      "text": "保留提交回执副本。",
+      "textEnglish": "Keep a copy of the submission receipt",
+      "evidenceQuote": "Keep a copy of your submission receipt.",
+      "dueText": null,
+      "dueAt": null,
+      "isNegation": false,
+      "essential": true
+    }
+  ],
+  "preservedFacts": [
+    {
+      "label": "deadline",
+      "value": "Sunday at 11:59 PM"
+    },
+    {
+      "label": "format",
+      "value": "PDF"
+    }
+  ],
+  "ambiguities": [
+    "Sunday 的具体日期未提供。"
+  ],
+  "suggestedClarifyingQuestions": [
+    "请问这里指的是哪一个具体日期？"
+  ]
+}

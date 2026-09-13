@@ -1,0 +1,27 @@
+{
+  "token": "PLACEHOLDER_VERIFICATION_TOKEN",
+  "team_id": "T0000EXAMPLE",
+  "api_app_id": "A0000EXAMPLE",
+  "type": "event_callback",
+  "event_id": "Ev0000EXAMPLE6",
+  "event_time": 1789308005,
+  "event_context": "1-message-T0000EXAMPLE-D0000EXAMPLE",
+  "authorizations": [
+    {
+      "enterprise_id": null,
+      "team_id": "T0000EXAMPLE",
+      "user_id": "U0000STUDENT",
+      "is_bot": false,
+      "is_enterprise_install": false
+    }
+  ],
+  "event": {
+    "type": "message",
+    "channel": "D0000EXAMPLE",
+    "channel_type": "im",
+    "user": "U0000PROFESSOR",
+    "text": "Do not submit the ZIP file to Quercus. Submit only the PDF by Sunday at 11:59 PM. Never include your password in the report. Keep a copy of your submission receipt.",
+    "ts": "1789308005.000200",
+    "event_ts": "1789308005.000200"
+  }
+}

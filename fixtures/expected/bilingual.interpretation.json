@@ -1,0 +1,62 @@
+{
+  "sourceLanguage": "en,zh-CN",
+  "targetLanguage": "zh-CN",
+  "faithfulTranslation": "Jack，你好！请在 Tuesday at 3:30 PM 前把学生证 PDF 上传到 https://example.com/residence。保留原件。不要把原件留在前台。",
+  "hook": "上传电子版，请保留原件。",
+  "spokenSegments": [
+    "周二下午3:30前，",
+    "将学生证 PDF 上传到",
+    "https://example.com/residence。",
+    "保留原件。",
+    "不要把原件留在前台。"
+  ],
+  "shortTitle": "提交学生证电子版",
+  "senderIntent": "Jack，你好！请在 Tuesday at 3:30 PM 前把学生证 PDF 上传到 https://example.com/residence。保留原件。不要把原件留在前台。",
+  "urgency": "high",
+  "isSensitive": true,
+  "actionItems": [
+    {
+      "text": "上传学生证 PDF。",
+      "textEnglish": "Upload the student ID PDF to https://example.com/residence",
+      "evidenceQuote": "Please upload your student ID PDF to https://example.com/residence by Tuesday at 3:30 PM.",
+      "dueText": "Tuesday at 3:30 PM",
+      "dueAt": null,
+      "isNegation": false,
+      "essential": true
+    },
+    {
+      "text": "保留原件。",
+      "textEnglish": "Keep the original",
+      "evidenceQuote": "保留原件。",
+      "dueText": null,
+      "dueAt": null,
+      "isNegation": false,
+      "essential": true
+    },
+    {
+      "text": "不要把原件留在前台。",
+      "textEnglish": "Do not leave the original at the front desk",
+      "evidenceQuote": "Do not leave the original at the front desk.",
+      "dueText": null,
+      "dueAt": null,
+      "isNegation": true,
+      "essential": true
+    }
+  ],
+  "preservedFacts": [
+    {
+      "label": "url",
+      "value": "https://example.com/residence"
+    },
+    {
+      "label": "deadline",
+      "value": "Tuesday at 3:30 PM"
+    }
+  ],
+  "ambiguities": [
+    "Tuesday 的具体日期未提供。"
+  ],
+  "suggestedClarifyingQuestions": [
+    "请问这里指的是哪一个具体日期？"
+  ]
+}

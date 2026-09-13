@@ -1,0 +1,78 @@
+{
+  "sourceLanguage": "en",
+  "targetLanguage": "zh-CN",
+  "faithfulTranslation": "Jack，你好——因为 Monday 大学关闭，项目截止时间从 Monday at 11:59 PM 改到 Friday at 5:00 PM。把 PDF 提交到 Quercus，但请通过 Slack 直接把源代码仓库链接发给我。不要把仓库压缩包上传到 Quercus。如果你们小组需要延期，请在 Wednesday 前告诉我。",
+  "hook": "截止日期变了，请留意提交方式。",
+  "spokenSegments": [
+    "项目原定周一晚上11:59截止，",
+    "现改为周五下午5:00。",
+    "将 PDF 提交到 Quercus。",
+    "将源代码仓库链接通过 Slack",
+    "直接发给教授。",
+    "不要把仓库压缩包上传到 Quercus。",
+    "如果小组需要延期，",
+    "请在周三前告知教授。"
+  ],
+  "shortTitle": "项目截止日期已更改",
+  "senderIntent": "Jack，你好——因为 Monday 大学关闭，项目截止时间从 Monday at 11:59 PM 改到 Friday at 5:00 PM。把 PDF 提交到 Quercus，但请通过 Slack 直接把源代码仓库链接发给我。不要把仓库压缩包上传到 Quercus。如果你们小组需要延期，请在 Wednesday 前告诉我。",
+  "urgency": "high",
+  "isSensitive": true,
+  "actionItems": [
+    {
+      "text": "将 PDF 提交到 Quercus。",
+      "textEnglish": "Submit the PDF to Quercus",
+      "evidenceQuote": "Submit the PDF to Quercus",
+      "dueText": "Friday at 5:00 PM",
+      "dueAt": null,
+      "isNegation": false,
+      "essential": true
+    },
+    {
+      "text": "将源代码仓库链接通过 Slack 直接发给教授。",
+      "textEnglish": "Send the source-code repository link in Slack",
+      "evidenceQuote": "send your source-code repository link directly to me in Slack",
+      "dueText": null,
+      "dueAt": null,
+      "isNegation": false,
+      "essential": true
+    },
+    {
+      "text": "不要把仓库压缩包上传到 Quercus。",
+      "textEnglish": "Do not upload the repository archive to Quercus",
+      "evidenceQuote": "Do not upload the repository archive to Quercus.",
+      "dueText": null,
+      "dueAt": null,
+      "isNegation": true,
+      "essential": true
+    },
+    {
+      "text": "如果小组需要延期，请在周三前告知教授。",
+      "textEnglish": "Let the professor know by Wednesday if an extension is needed",
+      "evidenceQuote": "Let me know by Wednesday if your group needs an extension.",
+      "dueText": "Wednesday",
+      "dueAt": null,
+      "isNegation": false,
+      "essential": true
+    }
+  ],
+  "preservedFacts": [
+    {
+      "label": "old_deadline",
+      "value": "Monday at 11:59 PM"
+    },
+    {
+      "label": "new_deadline",
+      "value": "Friday at 5:00 PM"
+    },
+    {
+      "label": "extension_request",
+      "value": "Wednesday"
+    }
+  ],
+  "ambiguities": [
+    "消息没有给出具体日期；请确认 Friday 和 Wednesday 指哪一周。"
+  ],
+  "suggestedClarifyingQuestions": [
+    "请问这里指的是哪一个具体日期？"
+  ]
+}

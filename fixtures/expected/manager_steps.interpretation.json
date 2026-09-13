@@ -1,0 +1,80 @@
+{
+  "sourceLanguage": "en",
+  "targetLanguage": "zh-CN",
+  "faithfulTranslation": "Saturday 上班前，请阅读 https://example.com/checklist 的清单。9:00 AM 带上 ID 到 Room B214。请在 Thursday at 6:00 PM 前通过 Slack 提交可上班时间表。不要在公开频道分享顾客信息。",
+  "hook": "到岗前需要完成三项准备。",
+  "spokenSegments": [
+    "周六上班前，阅读清单：",
+    "https://example.com/checklist。",
+    "上午9:00带上 ID 到 B214。",
+    "周四下午6:00前，",
+    "在 Slack 提交可上班时间表。",
+    "不要在公开频道分享顾客信息。"
+  ],
+  "shortTitle": "上班前的准备事项",
+  "senderIntent": "Saturday 上班前，请阅读 https://example.com/checklist 的清单。9:00 AM 带上 ID 到 Room B214。请在 Thursday at 6:00 PM 前通过 Slack 提交可上班时间表。不要在公开频道分享顾客信息。",
+  "urgency": "high",
+  "isSensitive": true,
+  "actionItems": [
+    {
+      "text": "周六上班前阅读清单。",
+      "textEnglish": "Read https://example.com/checklist before Saturday",
+      "evidenceQuote": "Before your Saturday shift, read the checklist at https://example.com/checklist.",
+      "dueText": "Saturday",
+      "dueAt": null,
+      "isNegation": false,
+      "essential": true
+    },
+    {
+      "text": "上午9:00带上 ID 到 B214。",
+      "textEnglish": "Bring ID to B214 at 9:00 AM",
+      "evidenceQuote": "Bring your ID to Room B214 at 9:00 AM.",
+      "dueText": "9:00 AM",
+      "dueAt": null,
+      "isNegation": false,
+      "essential": true
+    },
+    {
+      "text": "在 Slack 提交可上班时间表。",
+      "textEnglish": "Submit the availability form in Slack",
+      "evidenceQuote": "Submit the availability form in Slack by Thursday at 6:00 PM.",
+      "dueText": "Thursday at 6:00 PM",
+      "dueAt": null,
+      "isNegation": false,
+      "essential": true
+    },
+    {
+      "text": "不要在公开频道分享顾客信息。",
+      "textEnglish": "Do not share customer information in the public channel",
+      "evidenceQuote": "Do not share customer information in the public channel.",
+      "dueText": null,
+      "dueAt": null,
+      "isNegation": true,
+      "essential": true
+    }
+  ],
+  "preservedFacts": [
+    {
+      "label": "checklist",
+      "value": "https://example.com/checklist"
+    },
+    {
+      "label": "arrival",
+      "value": "9:00 AM"
+    },
+    {
+      "label": "deadline",
+      "value": "Thursday at 6:00 PM"
+    },
+    {
+      "label": "room",
+      "value": "B214"
+    }
+  ],
+  "ambiguities": [
+    "具体日期未提供。"
+  ],
+  "suggestedClarifyingQuestions": [
+    "请问这里指的是哪一个具体日期？"
+  ]
+}

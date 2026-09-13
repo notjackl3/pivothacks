@@ -1,0 +1,27 @@
+{
+  "token": "PLACEHOLDER_VERIFICATION_TOKEN",
+  "team_id": "T0000EXAMPLE",
+  "api_app_id": "A0000EXAMPLE",
+  "type": "event_callback",
+  "event_id": "Ev0000EXAMPLE5",
+  "event_time": 1789308004,
+  "event_context": "1-message-T0000EXAMPLE-D0000EXAMPLE",
+  "authorizations": [
+    {
+      "enterprise_id": null,
+      "team_id": "T0000EXAMPLE",
+      "user_id": "U0000STUDENT",
+      "is_bot": false,
+      "is_enterprise_install": false
+    }
+  ],
+  "event": {
+    "type": "message",
+    "channel": "D0000EXAMPLE",
+    "channel_type": "im",
+    "user": "U0000PROFESSOR",
+    "text": "Hi Jack，你好！Please upload your student ID PDF to https://example.com/residence by Tuesday at 3:30 PM. 保留原件。Do not leave the original at the front desk.",
+    "ts": "1789308004.000200",
+    "event_ts": "1789308004.000200"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "token": "PLACEHOLDER_VERIFICATION_TOKEN",
+  "team_id": "T0000EXAMPLE",
+  "api_app_id": "A0000EXAMPLE",
+  "type": "event_callback",
+  "event_id": "Ev0000EXAMPLE1",
+  "event_time": 1789308000,
+  "event_context": "1-message-T0000EXAMPLE-D0000EXAMPLE",
+  "authorizations": [
+    {
+      "enterprise_id": null,
+      "team_id": "T0000EXAMPLE",
+      "user_id": "U0000STUDENT",
+      "is_bot": false,
+      "is_enterprise_install": false
+    }
+  ],
+  "event": {
+    "type": "message",
+    "channel": "D0000EXAMPLE",
+    "channel_type": "im",
+    "user": "U0000PROFESSOR",
+    "text": "Hi Jack — because Monday is a university closure, the project deadline has moved from Monday at 11:59 PM to Friday at 5:00 PM. Submit the PDF to Quercus, but send your source-code repository link directly to me in Slack. Do not upload the repository archive to Quercus. Let me know by Wednesday if your group needs an extension.",
+    "ts": "1789308000.000200",
+    "event_ts": "1789308000.000200"
+  }
+}

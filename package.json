@@ -1,0 +1,25 @@
+{
+  "name": "reelrelay",
+  "private": true,
+  "packageManager": "pnpm@10.27.0",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "pnpm --filter @reelrelay/server test",
+    "demo:inject": "tsx scripts/inject-demo.ts",
+    "smoke:e2e": "tsx scripts/smoke-e2e.ts",
+    "smoke:pipeline": "tsx scripts/smoke-pipeline.ts",
+    "reel:preview": "pnpm --filter @reelrelay/reel preview"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "tsx": "4.23.13",
+    "turbo": "2.10.12",
+    "typescript": "^5.9.3",
+    "vitest": "4.1.11"
+  }
+}

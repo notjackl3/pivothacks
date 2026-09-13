@@ -1,0 +1,57 @@
+{
+  "sourceLanguage": "en",
+  "targetLanguage": "zh-CN",
+  "faithfulTranslation": "Jack，你好，请在 Friday at 4:00 PM 前把 $1,250 的房租收据和签好的租约 PDF 发到 housing@example.edu。不要发送银行卡照片。这是索要材料，不是再次索要付款。",
+  "hook": "补交材料，无需再次付款。",
+  "spokenSegments": [
+    "这是补交材料的要求，无需再次付款。",
+    "请在周五下午4:00前，",
+    "将 $1,250 的房租收据和签好的租约 PDF",
+    "发送至 housing@example.edu。",
+    "不要发送银行卡照片。"
+  ],
+  "shortTitle": "房租材料需要补交",
+  "senderIntent": "Jack，你好，请在 Friday at 4:00 PM 前把 $1,250 的房租收据和签好的租约 PDF 发到 housing@example.edu。不要发送银行卡照片。这是索要材料，不是再次索要付款。",
+  "urgency": "high",
+  "isSensitive": true,
+  "actionItems": [
+    {
+      "text": "发送 $1,250 的房租收据和签好的租约 PDF。",
+      "textEnglish": "Send the $1,250 rent receipt and signed lease PDF",
+      "evidenceQuote": "please send the rent receipt for $1,250 and your signed lease PDF to housing@example.edu by Friday at 4:00 PM",
+      "dueText": "Friday at 4:00 PM",
+      "dueAt": null,
+      "isNegation": false,
+      "essential": true
+    },
+    {
+      "text": "不要发送银行卡照片。",
+      "textEnglish": "Do not send a photo of your bank card",
+      "evidenceQuote": "Do not send a photo of your bank card.",
+      "dueText": null,
+      "dueAt": null,
+      "isNegation": true,
+      "essential": true
+    }
+  ],
+  "preservedFacts": [
+    {
+      "label": "amount",
+      "value": "$1,250"
+    },
+    {
+      "label": "deadline",
+      "value": "Friday at 4:00 PM"
+    },
+    {
+      "label": "email",
+      "value": "housing@example.edu"
+    }
+  ],
+  "ambiguities": [
+    "Friday 的具体日期未提供。"
+  ],
+  "suggestedClarifyingQuestions": [
+    "请问这里指的是哪一个具体日期？"
+  ]
+}
