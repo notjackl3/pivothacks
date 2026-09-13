@@ -15,7 +15,7 @@ const port = Number(values.port);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Choose a port from 1 to 65535.");
 const candidates: DemoVideo[] = values.file
   ? [{ id: "custom", label: "Selected video", filePath: path.resolve(values.file) }]
-  : gameplayIds.map((id) => ({ id, label: gameplays[id].label, creator: gameplays[id].creator, sourceUrl: gameplays[id].sourceUrl, filePath: path.resolve("build/demo", `professor_deadline${id === "subway-surfers" ? "" : `.${id}`}.mp4`) }));
+  : gameplayIds.map((id) => ({ id, label: gameplays[id].label, creator: gameplays[id].creator, sourceUrl: gameplays[id].sourceUrl, license: gameplays[id].license, filePath: path.resolve("build/demo", `professor_deadline${id === "subway-surfers" ? "" : `.${id}`}.mp4`) }));
 const videos = (await Promise.all(candidates.map(async (video) => {
   const info = await stat(video.filePath).catch(() => null);
   return info?.isFile() && info.size > 0 && path.extname(video.filePath).toLowerCase() === ".mp4" ? video : null;

@@ -1,4 +1,4 @@
-export const gameplayIds = ["subway-surfers", "minecraft-parkour", "gta-racing"] as const;
+export const gameplayIds = ["subway-surfers", "minecraft-parkour", "gta-racing", "geometry-dash", "temple-run"] as const;
 export type GameplayId = typeof gameplayIds[number];
 
 type GameplayClip = {
@@ -27,6 +27,16 @@ export const gameplays: Record<GameplayId, GameplayClip> = {
     id: "gta-racing", label: "GTA Racing", file: "gameplay/gta-racing.mp4", durationInFrames: 1800,
     creator: "Dope Gameplays", creatorUrl: "https://www.youtube.com/@nocopyrightgameplay4u",
     sourceUrl: "https://www.youtube.com/watch?v=qAI0mrCzDp0", license: "Creative Commons Attribution",
+  },
+  "geometry-dash": {
+    id: "geometry-dash", label: "Geometry Dash", file: "gameplay/geometry-dash.mp4", durationInFrames: 1800,
+    creator: "Jason Mc", creatorUrl: "https://www.youtube.com/@JasonTrMc",
+    sourceUrl: "https://www.youtube.com/watch?v=xYawLx-0VPw", license: "Creator-permitted background reuse",
+  },
+  "temple-run": {
+    id: "temple-run", label: "Temple Run", file: "gameplay/temple-run.mp4", durationInFrames: 1800,
+    creator: "Whipped", creatorUrl: "https://www.youtube.com/@WhippedCreations",
+    sourceUrl: "https://www.youtube.com/watch?v=-WVLJcxT214", license: "Creator-permitted background reuse",
   },
 };
 

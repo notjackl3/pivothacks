@@ -2,8 +2,9 @@
 
 These local backgrounds are 60-second, silent H.264 clips at 720 × 1280 and
 30 fps (1,800 frames each). They loop behind the separate narration track.
-Use `--background subway-surfers`, `--background minecraft-parkour`, or
-`--background gta-racing` with `pnpm reel:render`. The composition and artifact
+Use `--background subway-surfers`, `--background minecraft-parkour`,
+`--background gta-racing`, `--background geometry-dash`, or
+`--background temple-run` with `pnpm reel:render`. The composition and artifact
 metadata automatically include the selected recording's attribution.
 
 ## Subway Surfers
@@ -54,3 +55,54 @@ Credit for published videos:
 Credit for published videos:
 
 > Gameplay by Dope Gameplays: https://www.youtube.com/@nocopyrightgameplay4u. Source: https://www.youtube.com/watch?v=qAI0mrCzDp0. Cropped, silent excerpt; Creative Commons Attribution as stated by the creator.
+
+## Geometry Dash
+
+- File: `geometry-dash.mp4`.
+- Creator: [Jason Mc](https://www.youtube.com/@JasonTrMc).
+- Source: [Geometry Dash Background Gameplay](https://www.youtube.com/watch?v=xYawLx-0VPw), uploaded April 26, 2020.
+- Downloaded September 13, 2026; source excerpt 01:10–02:10.
+- The creator recorded the levels and explicitly permits using the footage as
+  a background for narrated YouTube videos. The YouTube license metadata field
+  is empty, so this clip is labeled creator-permitted reuse rather than CC.
+- The prepared clip removes the original game/music audio and uses a 360 × 640
+  crop at (280, 40) from the 1280 × 720 recording to keep the player visible.
+  It is scaled to 720 × 1280. Narration is a separate track.
+
+Credit for published videos:
+
+> Gameplay by Jason Mc: https://www.youtube.com/@JasonTrMc. Source: https://www.youtube.com/watch?v=xYawLx-0VPw. Cropped, silent excerpt; background reuse permitted in the creator's description.
+
+## Temple Run
+
+- File: `temple-run.mp4`.
+- Recording: Temple Run, with forest paths, bridges and gold coins.
+- Creator: [Whipped](https://www.youtube.com/@WhippedCreations).
+- Source: [Temple Run Gameplay (2024)](https://www.youtube.com/watch?v=-WVLJcxT214), uploaded February 2, 2024.
+- Downloaded September 13, 2026; source excerpt 00:33–01:33.
+- The creator explicitly permits background reuse for narrated stories and
+  other videos. Credit is appreciated but not required by that statement.
+  The YouTube license metadata field is empty; this is creator-permitted reuse.
+- The prepared clip removes the original audio and side bars using a 404 × 720
+  crop at (438, 0), scales to 720 × 1280, and converts the 60 fps recording to
+  the renderer's 30 fps timeline.
+
+Credit for published videos:
+
+> Gameplay by Whipped: https://www.youtube.com/@WhippedCreations. Source: https://www.youtube.com/watch?v=-WVLJcxT214. Cropped, silent excerpt; background reuse permitted in the creator's description.
+
+Render both with the existing demo narration, then restart the player:
+
+```sh
+pnpm reel:render --background geometry-dash --reuse-narration build/demo/professor_deadline.json
+pnpm reel:render --background temple-run --reuse-narration build/demo/professor_deadline.json
+pnpm reel:watch
+```
+
+Verified September 13, 2026: both prepared clips decode at 720 × 1280, 30 fps,
+with 1,800 frames and no game audio. Both narrated demos export as 30.89-second
+H.264/AAC MP4s with a -4.1 dB audio peak. Caption and action-card frames were
+reviewed. The studio serves five choices, and both new videos, thumbnails,
+posters, byte-range playback and download endpoints passed local HTTP checks.
+Renderer/server type checks and player syntax checks passed. Browser automation
+was unavailable, so interactive browser playback was not exercised.

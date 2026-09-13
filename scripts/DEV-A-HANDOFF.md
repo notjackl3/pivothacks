@@ -8,7 +8,8 @@ The command exports the synthetic Chinese demo to
 `build/demo/professor_deadline.mp4`, with a JSON artifact alongside it. Install
 `ffprobe` and Chrome/Edge before rendering on Windows.
 
-The video includes selectable Subway Surfers, Minecraft parkour, or GTA racing
+The video includes selectable Subway Surfers, Minecraft parkour, GTA racing,
+Geometry Dash, or Temple Run
 gameplay, Chinese narration starting
 immediately, Chinese captions with English translations, bilingual action pages,
 and embedded gameplay attribution. `pnpm reel:preview` opens the composition in
@@ -24,15 +25,18 @@ See `scripts/VIDEO-GEN-PLAN.md` for the complete run instructions.
 pnpm reel:render --background minecraft-parkour
 pnpm reel:render --background gta-racing
 pnpm reel:render --background gta-racing --reuse-narration build/demo/professor_deadline.json
+pnpm reel:render --background geometry-dash --reuse-narration build/demo/professor_deadline.json
+pnpm reel:render --background temple-run --reuse-narration build/demo/professor_deadline.json
 pnpm reel:watch
 ```
 
-Named backgrounds write `build/demo/professor_deadline.minecraft-parkour.mp4`
-and `build/demo/professor_deadline.gta-racing.mp4`. The player offers every
-available background in a dropdown; restart it after rendering new choices.
+Named backgrounds write `build/demo/professor_deadline.<background>.mp4`.
+The player offers every available background as a thumbnail card; restart it
+after rendering new choices.
 `--reuse-narration` validates that the saved artifact has the same narration and
 language, then reuses its audio and timings without another speech request.
-Studio includes `Reel`, `MinecraftParkour`, and `GtaRacing` compositions with sound.
+Studio includes `Reel`, `MinecraftParkour`, `GtaRacing`, `GeometryDash`, and
+`TempleRun` compositions with sound.
 Server callers can use `new RemotionRenderer(context, { background: "gta-racing" })`.
 The default remains Subway Surfers. Assets and source credits are documented in
 `packages/reel/public/gameplay/README.md`.

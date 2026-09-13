@@ -22,7 +22,7 @@ Aim for roughly 30–45 seconds of narration; allow extra time for all action ca
 - `apps/server/src/render/RemotionRenderer.ts`: local H.264 rendering, bundled
   assets, duration validation, and the existing 20 MB output limit.
 - `apps/server/src/worker/generateReel.ts`: orchestration and persisted artifacts.
-- `packages/reel/public/gameplay/*.mp4`: the three prepared backgrounds.
+- `packages/reel/public/gameplay/*.mp4`: the five prepared backgrounds.
   Keep the adjacent README's creator attribution with published reels.
 
 Your module can start from a validated `MessageInterpretation` with a finished

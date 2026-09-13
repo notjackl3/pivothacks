@@ -4,12 +4,15 @@ export type DemoVideo = {
   filePath: string;
   creator?: string;
   sourceUrl?: string;
+  license?: string;
 };
 
 const descriptions: Record<string, string> = {
   "subway-surfers": "Colorful runs. Familiar rhythm.",
   "minecraft-parkour": "One block at a time.",
   "gta-racing": "Stunt tracks. Full speed.",
+  "geometry-dash": "Neon jumps. Perfect timing.",
+  "temple-run": "Golden coins. Endless turns.",
   custom: "Your selected MP4",
 };
 
@@ -27,7 +30,7 @@ export function playerPage(videos: DemoVideo[], selected: DemoVideo): string {
   const choices = videos.map((video, index) => `
     <label class="clip-choice">
       <input type="radio" name="background" value="${escapeHtml(video.id)}" ${video.id === selected.id ? "checked" : ""}
-        data-label="${escapeHtml(video.label)}" data-creator="${escapeHtml(video.creator ?? "")}" data-source="${escapeHtml(video.sourceUrl ?? "")}">
+        data-label="${escapeHtml(video.label)}" data-creator="${escapeHtml(video.creator ?? "")}" data-source="${escapeHtml(video.sourceUrl ?? "")}" data-license="${escapeHtml(video.license ?? "")}">
       <span class="clip-card">
         ${video.id === "custom" ? `<span class="clip-placeholder">${playIcon}</span>` : `<img src="/assets/${escapeHtml(video.id)}.jpg" alt="" width="360" height="270">`}
         <span class="clip-copy"><span class="clip-number">0${index + 1}</span><strong>${escapeHtml(video.label)}</strong><span class="clip-description">${descriptions[video.id] ?? "Gameplay preview"}</span></span>
@@ -102,7 +105,7 @@ export function playerPage(videos: DemoVideo[], selected: DemoVideo): string {
           <div class="preview-caption"><strong id="selected-label">${escapeHtml(selected.label)}</strong><span id="media-info">${isDemo ? "720 × 1280 · MP4" : "MP4 video"}</span></div>
         </div>
         <p class="playback-status" id="status" role="status">Press play to watch with sound.</p>
-        <p class="gameplay-credit" id="credit" ${selected.creator ? "" : "hidden"}>Gameplay by <a id="creator" href="${escapeHtml(selected.sourceUrl ?? "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(selected.creator ?? "")}</a><span> · CC Attribution</span></p>
+        <p class="gameplay-credit" id="credit" ${selected.creator ? "" : "hidden"}>Gameplay by <a id="creator" href="${escapeHtml(selected.sourceUrl ?? "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(selected.creator ?? "")}</a><span id="license">${selected.license ? ` · ${escapeHtml(selected.license)}` : ""}</span></p>
       </section>
     </main>
 

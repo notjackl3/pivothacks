@@ -3,7 +3,7 @@ import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { MessageInterpretationSchema, TimedInterpretationSchema, UserPreferencesSchema, type MessageInterpretation } from "../packages/shared/src/index.js";
-import { gameplayCredit, getGameplay } from "../packages/reel/src/gameplays.js";
+import { gameplayCredit, gameplayIds, getGameplay } from "../packages/reel/src/gameplays.js";
 import { config, repoRoot } from "../apps/server/src/config.js";
 import { fixtureNames, MockSourceConnector } from "../apps/server/src/connectors/mock/MockSourceConnector.js";
 import { RemotionRenderer } from "../apps/server/src/render/RemotionRenderer.js";
@@ -31,7 +31,7 @@ async function main() {
     options: { help: { type: "boolean" }, silent: { type: "boolean" }, input: { type: "string" }, output: { type: "string" }, background: { type: "string", default: "subway-surfers" }, "reuse-narration": { type: "string" } },
   });
   if (values.help) {
-    console.info("pnpm reel:render [professor_deadline] [--background subway-surfers|minecraft-parkour|gta-racing]\npnpm reel:render --background minecraft-parkour --reuse-narration build/demo/professor_deadline.json\npnpm reel:render --input message.json [--output build/demo/reel.mp4]\n\nCustom input: { originalText, senderDisplayName, interpretation: MessageInterpretation }.\nFresh voice requires ELEVENLABS_API_KEY in root .env; ELEVENLABS_VOICE_ID is optional.\n--reuse-narration reuses an existing artifact's matching audio without an API request.\n--silent explicitly exports a caption-only preview. No database or messaging accounts are required.");
+    console.info(`pnpm reel:render [professor_deadline] [--background ${gameplayIds.join("|")}]\npnpm reel:render --background geometry-dash --reuse-narration build/demo/professor_deadline.json\npnpm reel:render --input message.json [--output build/demo/reel.mp4]\n\nCustom input: { originalText, senderDisplayName, interpretation: MessageInterpretation }.\nFresh voice requires ELEVENLABS_API_KEY in root .env; ELEVENLABS_VOICE_ID is optional.\n--reuse-narration reuses an existing artifact's matching audio without an API request.\n--silent explicitly exports a caption-only preview. No database or messaging accounts are required.`);
     return;
   }
   const background = getGameplay(values.background);

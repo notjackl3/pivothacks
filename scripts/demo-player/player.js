@@ -102,6 +102,7 @@
       credit.hidden = !choice.dataset.creator;
       creator.textContent = choice.dataset.creator;
       creator.href = choice.dataset.source || '#';
+      document.getElementById('license').textContent = choice.dataset.license ? ' · ' + choice.dataset.license : '';
       history.replaceState(null, '', '/' + query);
       updateTime();
       video.load();

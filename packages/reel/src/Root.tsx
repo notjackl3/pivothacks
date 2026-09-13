@@ -16,6 +16,8 @@ export function RemotionRoot() {
     { id: "Reel", background: "subway-surfers" },
     { id: "MinecraftParkour", background: "minecraft-parkour" },
     { id: "GtaRacing", background: "gta-racing" },
+    { id: "GeometryDash", background: "geometry-dash" },
+    { id: "TempleRun", background: "temple-run" },
   ];
   return <>{variants.map(({ id, background }) => <Composition key={id} id={id} component={ReelComposition} durationInFrames={Math.ceil(sampleProps.interpretation.totalMs / 1000 * FPS)} fps={FPS} width={720} height={1280} defaultProps={{ ...sampleProps, background }} calculateMetadata={({ props }: { props: ReelProps }) => ({ durationInFrames: Math.ceil(props.interpretation.totalMs / 1000 * FPS), width: props.width, height: props.height })} />)}</>;
 }
