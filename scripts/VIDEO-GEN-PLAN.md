@@ -2,7 +2,8 @@
 
 ## Agreed result
 
-A vertical ReelRelay video in the Reddit-story format: looping Subway Surfers
+A vertical ReelRelay video in the Reddit-story format: selectable Subway Surfers,
+Minecraft parkour, or GTA racing
 gameplay, conversational narration in the recipient's language, and large captions
 that pop in sync, with English translations underneath. Preserve every deadline, requirement, prohibition, and important
 fact from the source message. Start with the existing Chinese demo fixture.
@@ -21,7 +22,7 @@ Aim for roughly 30–45 seconds of narration; allow extra time for all action ca
 - `apps/server/src/render/RemotionRenderer.ts`: local H.264 rendering, bundled
   assets, duration validation, and the existing 20 MB output limit.
 - `apps/server/src/worker/generateReel.ts`: orchestration and persisted artifacts.
-- `packages/reel/public/gameplay/subway-surfers.mp4`: the selected background.
+- `packages/reel/public/gameplay/*.mp4`: the three prepared backgrounds.
   Keep the adjacent README's creator attribution with published reels.
 
 Your module can start from a validated `MessageInterpretation` with a finished
@@ -86,6 +87,8 @@ Chrome/Edge on Windows, or its own browser elsewhere.
 
 ```sh
 pnpm reel:render professor_deadline --output build/demo/pitch.mp4
+pnpm reel:render --background minecraft-parkour
+pnpm reel:render --background gta-racing --reuse-narration build/demo/professor_deadline.json
 pnpm reel:render --input message.json --output build/demo/custom.mp4
 pnpm reel:render --silent
 pnpm reel:preview
@@ -101,6 +104,13 @@ The narration starts immediately. `pnpm reel:watch` serves the exported MP4 at
 `http://localhost:4010`; click Play with sound to start unmuted. Use
 `pnpm reel:watch --file build/demo/professor_deadline.bilingual.mp4` for a named
 export. The player binds only to localhost and serves the selected video.
+
+With no `--file`, the player lists the exported Subway Surfers, Minecraft parkour,
+and GTA racing demos in a dropdown. A selection starts the chosen reel with sound.
+Named backgrounds get their own filenames, so one export does not overwrite
+another. `--reuse-narration` uses a matching local artifact's audio and timing;
+it rejects a changed script or language and does not call ElevenLabs.
+The Studio sidebar also has a voiced sample composition for each background.
 
 For both languages on screen, add `interpretation.captionTranslation` with
 `language: "en"`, an English `hook`, and `spokenSegments` containing exactly one
@@ -130,6 +140,14 @@ inspected; audio decoding and volume were checked. The local player returned
 HTTP 200 for the page and HTTP 206 for a media range request. Browser playback
 could not be inspected because no browser was connected to the session.
 Server and reel typechecks passed. No test suites were run.
+
+The Minecraft parkour and GTA racing exports also completed at 30.89 seconds.
+Their MP4 sizes are 6,624,696 and 14,713,391 bytes respectively, both below the
+20 MB renderer limit. Both have all fifteen bilingual caption phrases. Decoding
+their audio produces the same SHA-256 as the approved Subway Surfers demo.
+Rendered frames were inspected, and the player serves all three choices with
+HTTP 206 range support. The background selector and narration reuse command pass
+the server and reel typechecks.
 
 Provide the teammate with the exact render command, the exported MP4 path, the
 gameplay credit, and the final commit hash. Keep generated demo outputs and

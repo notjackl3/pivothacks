@@ -6,8 +6,10 @@ import { Chip } from "./Chip.js";
 import { Captions } from "./Captions.js";
 import { ActionCard } from "./ActionCard.js";
 import { captionUnits } from "./captionChunks.js";
+import { getGameplay } from "./gameplays.js";
 
-export function ReelComposition({ interpretation, senderDisplayName, source, isMock, audioSrc, width, height }: ReelProps) {
+export function ReelComposition({ interpretation, senderDisplayName, source, isMock, audioSrc, width, height, background }: ReelProps) {
+  const gameplay = getGameplay(background);
   const frame = useCurrentFrame();
   const ms = frame / FPS * 1000;
   const chinese = interpretation.targetLanguage.startsWith("zh");
@@ -21,7 +23,7 @@ export function ReelComposition({ interpretation, senderDisplayName, source, isM
   const progress = Math.min(1, Math.max(0, (ms - BODY_START_MS) / interpretation.narrationMs));
 
   return <AbsoluteFill style={{ fontFamily: '"Reel Noto SC", "Reel Noto", sans-serif', fontWeight: 700, color: "white" }}>
-    <GameplayBackground />
+    <GameplayBackground background={gameplay.id} />
     <div style={{ width: 720, height: 1280, position: "absolute", transformOrigin: "top left", transform: "scale(" + width / 720 + ", " + height / 1280 + ")" }}>
       <Chip sender={senderDisplayName} source={source} urgency={interpretation.urgency} isMock={isMock} targetLanguage={interpretation.targetLanguage} />
       <div style={{ position: "absolute", top: 177, left: 42, right: 42, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.25)", overflow: "hidden" }}>
@@ -44,8 +46,8 @@ export function ReelComposition({ interpretation, senderDisplayName, source, isM
         <span>{audioSrc ? (chinese ? "原文与完整事项见下方按钮" : "Original + actions below") : (chinese ? "无配音预览" : "Silent preview")}</span>
       </div>
       <div style={{ position: "absolute", bottom: 46, left: 40, right: 40, color: "#c3c4ce", fontSize: 13, lineHeight: 1.6 }}>
-        <div>Gameplay: LoopScape Gameplays · Creative Commons Attribution</div>
-        <div>youtube.com/watch?v=Iot_bB8lKgE · edited excerpt</div>
+        <div>Gameplay: {gameplay.creator} · {gameplay.license}</div>
+        <div>{gameplay.sourceUrl.replace("https://www.", "")} · edited excerpt</div>
       </div>
     </div>
     {audioSrc ? <Sequence from={Math.round(BODY_START_MS / 1000 * FPS)}><Audio src={audioSrc} /></Sequence> : null}

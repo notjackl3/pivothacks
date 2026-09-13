@@ -3,6 +3,7 @@ import path from "node:path";
 import { bundle } from "@remotion/bundler";
 import { makeCancelSignal, renderMedia, selectComposition } from "@remotion/renderer";
 import { actionPages, totalDurationMs } from "@reelrelay/reel/timing";
+import { gameplays, getGameplay, type GameplayId } from "@reelrelay/reel/gameplays";
 import { TimedInterpretationSchema, type ReelArtifact, type ReelRenderer, type TimedInterpretation, type UserPreferences } from "@reelrelay/shared";
 import { config, dataDir, repoRoot } from "../config.js";
 import { validateCaptionTiming } from "../tts/timing.js";
@@ -21,7 +22,7 @@ export async function prepareRenderer(): Promise<string> {
       const publicDir = path.join(repoRoot, "packages/reel/public");
       await access(path.join(publicDir, "fonts/NotoSansSC-Bold.ttf"));
       await access(path.join(publicDir, "fonts/NotoSans-Bold.ttf"));
-      await access(path.join(publicDir, "gameplay/subway-surfers.mp4"));
+      await Promise.all(Object.values(gameplays).map((clip) => access(path.join(publicDir, clip.file))));
       return bundle({ entryPoint: path.join(repoRoot, "packages/reel/src/index.ts"), rootDir: path.join(repoRoot, "packages/reel"), publicDir, outDir: path.join(dataDir, "bundle"), enableCaching: true, webpackOverride: (current) => ({ ...current, resolve: { ...current.resolve, extensionAlias: { ...current.resolve?.extensionAlias, ".js": [".ts", ".tsx", ".js"] } } }) });
     })().catch((error: unknown) => { bundlePromise = undefined; throw error; });
   }
@@ -29,7 +30,7 @@ export async function prepareRenderer(): Promise<string> {
 }
 export type RenderContext = Pick<ReelArtifact, "messageId" | "senderDisplayName" | "source" | "isMock" | "originalText" | "audioPath">;
 export class RemotionRenderer implements ReelRenderer {
-  constructor(private readonly context: RenderContext, private readonly options: { onProgress?: (progress: number) => void } = {}) {}
+  constructor(private readonly context: RenderContext, private readonly options: { background?: GameplayId; onProgress?: (progress: number) => void } = {}) {}
   async render(interp: TimedInterpretation, _prefs: UserPreferences): Promise<ReelArtifact> {
     TimedInterpretationSchema.parse(interp);
     validateCaptionTiming(interp.captionSegments, interp.narrationMs);
@@ -40,7 +41,7 @@ export class RemotionRenderer implements ReelRenderer {
     await mkdir(directory, { recursive: true });
     const serveUrl = await prepareRenderer();
     const browserExecutable = await localBrowser();
-    const inputProps = { interpretation: interp, senderDisplayName: this.context.senderDisplayName, source: this.context.source, isMock: this.context.isMock, width: config.REEL_WIDTH, height: config.REEL_HEIGHT, audioSrc: this.context.audioPath ? `data:audio/mpeg;base64,${(await readFile(this.context.audioPath)).toString("base64")}` : null };
+    const inputProps = { interpretation: interp, senderDisplayName: this.context.senderDisplayName, source: this.context.source, isMock: this.context.isMock, background: getGameplay(this.options.background).id, width: config.REEL_WIDTH, height: config.REEL_HEIGHT, audioSrc: this.context.audioPath ? `data:audio/mpeg;base64,${(await readFile(this.context.audioPath)).toString("base64")}` : null };
     const composition = await selectComposition({ serveUrl, id: "Reel", inputProps, browserExecutable, timeoutInMilliseconds: config.RENDER_TIMEOUT_MS });
     const outputLocation = path.join(directory, `${this.context.messageId}.mp4`);
     for (const crf of [26, 30]) {

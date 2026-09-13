@@ -2,24 +2,41 @@ import { randomUUID } from "node:crypto";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { MessageInterpretationSchema, UserPreferencesSchema } from "../packages/shared/src/index.js";
+import { MessageInterpretationSchema, TimedInterpretationSchema, UserPreferencesSchema, type MessageInterpretation } from "../packages/shared/src/index.js";
+import { gameplayCredit, getGameplay } from "../packages/reel/src/gameplays.js";
 import { config, repoRoot } from "../apps/server/src/config.js";
 import { fixtureNames, MockSourceConnector } from "../apps/server/src/connectors/mock/MockSourceConnector.js";
 import { RemotionRenderer } from "../apps/server/src/render/RemotionRenderer.js";
-import { synthesizeSpeech, type SpeechResult } from "../apps/server/src/tts/elevenlabs.js";
+import { audioDurationMs, synthesizeSpeech, type SpeechResult } from "../apps/server/src/tts/elevenlabs.js";
 import { captionsOnlyTiming, withTiming } from "../apps/server/src/tts/timing.js";
+
+async function reuseNarration(file: string, interpretation: MessageInterpretation): Promise<SpeechResult> {
+  const cachePath = path.resolve(file);
+  const cached = JSON.parse(await readFile(cachePath, "utf8")) as { interpretation?: unknown; audioPath?: unknown; renderMode?: unknown };
+  const timed = TimedInterpretationSchema.parse(cached.interpretation);
+  if (cached.renderMode !== "remotion" || typeof cached.audioPath !== "string") throw new Error("The saved artifact needs a narrated audio file.");
+  if (timed.targetLanguage !== interpretation.targetLanguage || JSON.stringify(timed.spokenSegments) !== JSON.stringify(interpretation.spokenSegments)) {
+    throw new Error("The saved narration does not match this script and language. Render fresh audio instead.");
+  }
+  const audioPath = path.resolve(path.dirname(cachePath), cached.audioPath);
+  const measuredMs = await audioDurationMs(audioPath);
+  if (Math.abs(measuredMs - timed.narrationMs) > 250) throw new Error("The saved audio no longer matches its caption timing.");
+  return { audioPath, mode: "voiced", narrationMs: timed.narrationMs, captionSegments: timed.captionSegments };
+}
 
 async function main() {
   const args = process.argv.slice(process.argv[2] === "--" ? 3 : 2);
   const { values, positionals } = parseArgs({
     args, allowPositionals: true,
-    options: { help: { type: "boolean" }, silent: { type: "boolean" }, input: { type: "string" }, output: { type: "string" } },
+    options: { help: { type: "boolean" }, silent: { type: "boolean" }, input: { type: "string" }, output: { type: "string" }, background: { type: "string", default: "subway-surfers" }, "reuse-narration": { type: "string" } },
   });
   if (values.help) {
-    console.info("pnpm reel:render [professor_deadline] [--silent] [--output build/demo/reel.mp4]\npnpm reel:render --input message.json\n\nCustom input: { originalText, senderDisplayName, interpretation: MessageInterpretation }.\nVoiced export requires ELEVENLABS_API_KEY in root .env. ELEVENLABS_VOICE_ID is optional.\n--silent explicitly exports a caption-only preview. No database or messaging accounts are required.");
+    console.info("pnpm reel:render [professor_deadline] [--background subway-surfers|minecraft-parkour|gta-racing]\npnpm reel:render --background minecraft-parkour --reuse-narration build/demo/professor_deadline.json\npnpm reel:render --input message.json [--output build/demo/reel.mp4]\n\nCustom input: { originalText, senderDisplayName, interpretation: MessageInterpretation }.\nFresh voice requires ELEVENLABS_API_KEY in root .env; ELEVENLABS_VOICE_ID is optional.\n--reuse-narration reuses an existing artifact's matching audio without an API request.\n--silent explicitly exports a caption-only preview. No database or messaging accounts are required.");
     return;
   }
-  if (!values.silent && !config.ELEVENLABS_API_KEY) {
+  const background = getGameplay(values.background);
+  if (values.silent && values["reuse-narration"]) throw new Error("Choose either --silent or --reuse-narration.");
+  if (!values.silent && !values["reuse-narration"] && !config.ELEVENLABS_API_KEY) {
     throw new Error("Add ELEVENLABS_API_KEY to the root .env for narration, or use --silent for a caption-only preview.");
   }
   const started = performance.now();
@@ -54,15 +71,16 @@ async function main() {
     senderDisplayName = message.senderDisplayName;
     name = fixture;
   }
-  const output = path.resolve(values.output ?? path.join(repoRoot, "build/demo", `${name}${values.silent ? ".silent" : ""}.mp4`));
+  const backgroundSuffix = background.id === "subway-surfers" ? "" : `.${background.id}`;
+  const output = path.resolve(values.output ?? path.join(repoRoot, "build/demo", `${name}${backgroundSuffix}${values.silent ? ".silent" : ""}.mp4`));
   if (path.extname(output).toLowerCase() !== ".mp4") throw new Error("The output filename must end in .mp4.");
   const messageId = randomUUID();
   const preferences = UserPreferencesSchema.parse({ targetLanguage: interpretation.targetLanguage });
-  console.info(`Rendering ${name} in ${interpretation.targetLanguage} (${values.silent ? "silent preview" : "ElevenLabs narration"}).`);
+  console.info(`Rendering ${name} over ${background.label} in ${interpretation.targetLanguage} (${values.silent ? "silent preview" : values["reuse-narration"] ? "reused ElevenLabs narration" : "ElevenLabs narration"}).`);
   const speechStarted = performance.now();
   const speech: SpeechResult = values.silent
     ? { ...captionsOnlyTiming(interpretation.spokenSegments), audioPath: null, mode: "captions_only" }
-    : await synthesizeSpeech(interpretation, messageId);
+    : values["reuse-narration"] ? await reuseNarration(values["reuse-narration"], interpretation) : await synthesizeSpeech(interpretation, messageId);
   if (!values.silent && speech.mode !== "voiced") {
     throw new Error(`ElevenLabs narration could not be generated (${speech.reason ?? "TTS_FAILED"}). Check the key/voice and ffprobe, then retry. Use --silent only for a silent preview.`);
   }
@@ -71,6 +89,7 @@ async function main() {
   console.info(`Narration: ${(timed.narrationMs / 1000).toFixed(1)}s; ${timed.captionSegments.length} caption phrases; ${timed.actionItems.length} actions.`);
   let lastProgress = -1;
   const renderer = new RemotionRenderer({ messageId, audioPath: speech.audioPath, senderDisplayName, source: "mock", isMock: true, originalText }, {
+    background: background.id,
     onProgress(progress) {
       const milestone = Math.floor(progress * 10) * 10;
       if (milestone > lastProgress) { console.info(`Video export: ${milestone}%`); lastProgress = milestone; }
@@ -82,8 +101,8 @@ async function main() {
   await mkdir(path.dirname(output), { recursive: true });
   if (path.resolve(artifact.videoPath) !== output) await copyFile(artifact.videoPath, output);
   const timings = { speechMs, renderMs: Math.round(performance.now() - renderStarted), totalMs: Math.round(performance.now() - started) };
-  await writeFile(output.replace(/\.mp4$/i, ".json"), JSON.stringify({ ...artifact, videoPath: output, timings, gameplayCredit: "LoopScape Gameplays — https://www.youtube.com/watch?v=Iot_bB8lKgE — Creative Commons Attribution; edited excerpt" }, null, 2) + "\n");
-  console.info(JSON.stringify({ videoPath: output, renderMode: artifact.renderMode, durationSeconds: timed.totalMs / 1000, ...timings }, null, 2));
+  await writeFile(output.replace(/\.mp4$/i, ".json"), JSON.stringify({ ...artifact, videoPath: output, background: background.id, timings, gameplayCredit: gameplayCredit(background.id) }, null, 2) + "\n");
+  console.info(JSON.stringify({ videoPath: output, background: background.id, renderMode: artifact.renderMode, durationSeconds: timed.totalMs / 1000, ...timings }, null, 2));
 }
 
 main().catch((error: unknown) => {
