@@ -1,18 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { Banner, FullPageSpinner } from "@/components/ui";
 
-/** Entry point: signed-in users land on Setup, everyone else on Login. */
-export default function Home() {
+/** Renders children only with a Supabase session; otherwise sends the browser to /login. */
+export function AuthGate({ children }: { children: ReactNode }) {
   const { loading, session, configError } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (loading || configError) return;
-    router.replace(session ? "/setup" : "/login");
+    if (!loading && !session && !configError) router.replace("/login");
   }, [loading, session, configError, router]);
 
   if (configError) {
@@ -24,5 +23,7 @@ export default function Home() {
       </div>
     );
   }
-  return <FullPageSpinner label="Opening ReelRelay…" />;
+  if (loading) return <FullPageSpinner label="Checking your session…" />;
+  if (!session) return <FullPageSpinner label="Redirecting to sign in…" />;
+  return <>{children}</>;
 }

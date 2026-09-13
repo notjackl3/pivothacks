@@ -1,18 +1,31 @@
+// Dev B. getDelivery() → the DeliveryConnector Dev A's worker calls. TelegramDelivery when TELEGRAM_BOT_TOKEN is set, else a console fallback.
 import type { DeliveryConnector, ReelArtifact, ReplyDraft } from "@reelrelay/shared";
+import { getBot } from "./telegram/bot.js";
+import { TelegramDelivery } from "./telegram/TelegramDelivery.js";
 
-/** Dev B replaces getDelivery() with TelegramDelivery. No message bodies are logged. */
-class ConsoleDelivery implements DeliveryConnector {
-  async pair(_userId: string, _pairingCode: string): Promise<void> {
-    throw new Error("Telegram pairing is not wired yet.");
-  }
-  async sendReel(target: string, artifact: ReelArtifact): Promise<string> {
-    console.info("console delivery (development only)", { messageId: artifact.messageId, mode: artifact.renderMode });
-    return `console:${target}:${artifact.messageId}`;
+export class ConsoleDelivery implements DeliveryConnector {
+  async pair(): Promise<void> {}
+  async sendReel(_target: string, artifact: ReelArtifact): Promise<string> {
+    console.log(`[delivery:console] reel for message ${artifact.messageId} (${artifact.renderMode})`);
+    return "console";
   }
   async sendDraft(_target: string, draft: ReplyDraft): Promise<string> {
-    console.info("console draft (development only)", { draftId: draft.id });
-    return `console:${draft.id}`;
+    console.log(`[delivery:console] draft ${draft.id}`);
+    return "console";
   }
 }
-const delivery = new ConsoleDelivery();
-export function getDelivery(): DeliveryConnector { return delivery; }
+
+let instance: DeliveryConnector | null = null;
+
+export function getDelivery(): DeliveryConnector {
+  if (!instance) {
+    const bot = getBot();
+    if (bot) {
+      instance = new TelegramDelivery(bot);
+    } else {
+      console.log("[delivery] TELEGRAM_BOT_TOKEN not set; using console delivery");
+      instance = new ConsoleDelivery();
+    }
+  }
+  return instance;
+}

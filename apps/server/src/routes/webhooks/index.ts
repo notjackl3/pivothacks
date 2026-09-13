@@ -1,4 +1,10 @@
+// Dev B. Registers every webhook route inside an encapsulated Fastify scope (the /api error envelope never applies here).
+// Raw bodies come from fastify-raw-body, registered once in src/index.ts with global: false; each route opts in via config.
 import type { FastifyInstance } from "fastify";
+import { registerSlackWebhook } from "./slack.js";
 
-// Dev B owns this registration point after the skeleton handoff.
-export async function registerWebhooks(_app: FastifyInstance): Promise<void> {}
+export async function registerWebhooks(app: FastifyInstance): Promise<void> {
+  await app.register(async (scope) => {
+    await registerSlackWebhook(scope);
+  });
+}
