@@ -35,6 +35,15 @@ const EnvSchema = z.object({
   INSTAGRAM_APP_SECRET: optionalString,
   INSTAGRAM_VERIFY_TOKEN: optionalString,
   INSTAGRAM_API_VERSION: z.string().regex(/^v\d+\.\d+$/).default("v23.0"),
+  COMPOSIO_API_KEY: optionalString,
+  COMPOSIO_WEBHOOK_SECRET: optionalString,
+  /** JSON maps toolkit -> Composio auth config id, for example {"gmail":"ac_..."}. */
+  COMPOSIO_AUTH_CONFIGS: z.string().default("{}"),
+  /** JSON maps toolkit -> inbound trigger slug. */
+  COMPOSIO_TRIGGER_SLUGS: z.string().default("{}"),
+  /** Optional JSON maps toolkit -> trigger config; Gmail commonly uses query/labelIds/interval. */
+  COMPOSIO_TRIGGER_CONFIGS: z.string().default("{}"),
+  COMPOSIO_API_BASE_URL: z.string().url().default("https://backend.composio.dev"),
   ANTHROPIC_API_KEY: optionalString,
   ANTHROPIC_MODEL: z.string().default("claude-opus-5"),
   ANTHROPIC_EFFORT: z.enum(["low", "medium"]).default("medium"),

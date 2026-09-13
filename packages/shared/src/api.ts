@@ -51,7 +51,7 @@ export interface MessageDetailResponse {
     externalChannelId: string;
     externalThreadId: string | null;
     isMock: boolean;
-    source: "slack" | "mock";
+    source: "slack" | "gmail" | "outlook" | "instagram" | "whatsapp" | "sms" | "mock";
     receivedAt: string;
   };
   job: {
@@ -185,3 +185,26 @@ export type RetrySendReplyResponse = ApproveReplyResponse;
 export interface DeleteIntegrationResponse {
   deleted: true;
 }
+
+export type ComposioToolkit = "gmail" | "slack" | "outlook" | "whatsapp";
+export type ComposioSourceStatus = "pending" | "active" | "expired" | "error";
+export interface ComposioSourceState {
+  id: string;
+  toolkit: ComposioToolkit;
+  connectedAccountId: string;
+  triggerId: string | null;
+  status: ComposioSourceStatus;
+  label: string | null;
+  errorDetail: string | null;
+}
+export interface ComposioSourcesResponse {
+  configuredToolkits: ComposioToolkit[];
+  sources: ComposioSourceState[];
+}
+export interface ComposioConnectRequest { toolkit: ComposioToolkit }
+export interface ComposioConnectResponse {
+  source: ComposioSourceState;
+  redirectUrl: string;
+  expiresAt: string;
+}
+export interface ComposioRefreshResponse { source: ComposioSourceState }

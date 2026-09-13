@@ -14,7 +14,7 @@ export interface StoredMessage {
   originalText: string;
   receivedAt: string;
   isMock: boolean;
-  provider: "slack" | "mock";
+  provider: NormalizedMessage["provider"];
 }
 
 /** Raw `messages` row (snake_case) as returned by supabase-js. */
@@ -31,10 +31,11 @@ export interface MessageRow {
   received_at: string;
   is_mock: boolean;
   created_at: string;
+  source_provider?: NormalizedMessage["provider"];
 }
 
 const MESSAGE_COLUMNS =
-  "id, user_id, connection_id, external_message_id, external_channel_id, external_thread_id, sender_external_id, sender_display_name, original_text, received_at, is_mock, created_at";
+  "id, user_id, connection_id, external_message_id, external_channel_id, external_thread_id, sender_external_id, sender_display_name, original_text, received_at, is_mock, source_provider, created_at";
 
 const PREFIX_RE = /^[0-9a-f]{8}$/;
 
@@ -51,7 +52,7 @@ export function toStoredMessage(row: MessageRow): StoredMessage {
     originalText: row.original_text,
     receivedAt: new Date(row.received_at).toISOString(),
     isMock: Boolean(row.is_mock),
-    provider: row.is_mock ? "mock" : "slack",
+    provider: row.source_provider ?? (row.is_mock ? "mock" : "slack"),
   };
 }
 

@@ -19,6 +19,7 @@ import {
 } from "../../db/queries/connections.js";
 import { ApiError } from "./index.js";
 import { registerInstagramRoutes } from "./instagram.js";
+import { registerComposioRoutes } from "./composio.js";
 
 /** Loose 8-4-4-4-12 form: anything else can never be one of the user's connection ids. */
 const IdParams = z.object({ id: z.guid() });
@@ -75,6 +76,7 @@ function instagramState(connections: ConnectionRow[]): InstagramIntegrationState
 
 export async function registerIntegrationsRoutes(api: FastifyInstance): Promise<void> {
   await registerInstagramRoutes(api);
+  await registerComposioRoutes(api);
   api.get("/api/integrations", async (req) => {
     const userId = await requireUser(req);
     const [slack, connections] = await Promise.all([slackState(userId, req), listConnectionsForUser(userId)]);

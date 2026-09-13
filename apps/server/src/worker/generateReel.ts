@@ -55,7 +55,7 @@ const defaultRepository: PipelineRepository = {
 export function defaultPipelineDependencies(): PipelineDependencies {
   return {
     repository: defaultRepository, engine: getEngine(), delivery: getDelivery(), speech: synthesizeSpeech,
-    renderer: (message, audioPath) => new RemotionRenderer({ messageId: message.id, senderDisplayName: message.sender_display_name, source: message.is_mock ? "mock" : "slack", isMock: message.is_mock, originalText: message.original_text, audioPath }),
+    renderer: (message, audioPath) => new RemotionRenderer({ messageId: message.id, senderDisplayName: message.sender_display_name, source: message.source_provider ?? (message.is_mock ? "mock" : "slack"), isMock: message.is_mock, originalText: message.original_text, audioPath }),
     upload: uploadArtifactFile, download: downloadArtifactFile, shorten: analyzeShorter,
     mode: config.PIPELINE_MODE, pause: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   };
@@ -134,7 +134,7 @@ export async function generateReel(messageId: string, deps = defaultPipelineDepe
     const timedInterpretation = timed.success ? timed.data : withTiming(interpretation, captionsOnlyTiming(interpretation.spokenSegments));
     let artifact: ReelArtifact = {
       messageId, videoPath, audioPath, durationMs: timedInterpretation.totalMs, renderMode: videoPath ? stored?.render_mode ?? "remotion" : "text_only",
-      interpretation: timedInterpretation, isMock: message.is_mock, source: message.is_mock ? "mock" : "slack", senderDisplayName: message.sender_display_name, originalText: message.original_text,
+      interpretation: timedInterpretation, isMock: message.is_mock, source: message.source_provider ?? (message.is_mock ? "mock" : "slack"), senderDisplayName: message.sender_display_name, originalText: message.original_text,
     };
     if (deps.mode === "video" && !videoPath && !degraded) {
       try {
@@ -177,7 +177,7 @@ export async function generateReel(messageId: string, deps = defaultPipelineDepe
         actionItems: [], preservedFacts: [], ambiguities: ["Translation unavailable."], suggestedClarifyingQuestions: [],
       };
       try {
-        await deps.delivery.sendReel(target, { messageId, videoPath: null, audioPath: null, durationMs: null, renderMode: "text_only", interpretation: withTiming(originalOnly, captionsOnlyTiming(originalOnly.spokenSegments)), isMock: message.is_mock, senderDisplayName: message.sender_display_name, source: message.is_mock ? "mock" : "slack", originalText: message.original_text, error: problem });
+        await deps.delivery.sendReel(target, { messageId, videoPath: null, audioPath: null, durationMs: null, renderMode: "text_only", interpretation: withTiming(originalOnly, captionsOnlyTiming(originalOnly.spokenSegments)), isMock: message.is_mock, senderDisplayName: message.sender_display_name, source: message.source_provider ?? (message.is_mock ? "mock" : "slack"), originalText: message.original_text, error: problem });
       } catch { /* The failure is persisted; a delivery outage must not lose the job status. */ }
     }
   }

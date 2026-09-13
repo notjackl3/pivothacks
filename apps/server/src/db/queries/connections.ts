@@ -5,7 +5,7 @@ import { supabase } from "../client.js";
 export interface ConnectionRow {
   id: string;
   user_id: string;
-  provider: "slack" | "telegram" | "instagram" | "whatsapp" | "sms" | "mock";
+  provider: "slack" | "composio_slack" | "gmail" | "outlook" | "telegram" | "instagram" | "whatsapp" | "sms" | "mock";
   external_account_id: string; // slack team_id | telegram chat_id
   external_user_id: string | null; // slack authed user id
   encrypted_access_token: string | null;

@@ -6,6 +6,9 @@ import type {
   EntitiesResponse,
   IntegrationsResponse,
   InstagramPairingCodeResponse,
+  ComposioConnectResponse,
+  ComposioSourcesResponse,
+  ComposioToolkit,
   MessageDetailResponse,
   MessagesListResponse,
   PairingCodeResponse,
@@ -159,6 +162,16 @@ export function putTrackedEntity(body: PutTrackedEntityRequest): Promise<PutTrac
 
 export function createInstagramPairingCode(): Promise<InstagramPairingCodeResponse> {
   return request<InstagramPairingCodeResponse>("POST", "instagram/pairing-code", {});
+}
+
+// ───────────────────────────── inbound sources ─────────────────────────────
+
+export function getComposioSources(): Promise<ComposioSourcesResponse> {
+  return request<ComposioSourcesResponse>("GET", "composio/sources");
+}
+
+export function connectComposioSource(toolkit: ComposioToolkit): Promise<ComposioConnectResponse> {
+  return request<ComposioConnectResponse>("POST", "composio/connect", { toolkit });
 }
 
 // ───────────────────────────── telegram ─────────────────────────────
