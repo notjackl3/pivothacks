@@ -156,7 +156,10 @@ export function orderedStageTimings(timings: Record<string, number>): [string, n
 }
 
 /** "Injected fixture" for demo rows; otherwise Slack, telling DMs (D…) from channels (C…/G…, bot mode) by the channel id. */
-export function messageSourceLabel(source: MessageDetailResponse["message"]["source"], externalChannelId: string): string {
-  if (source === "mock") return "Injected fixture";
-  return externalChannelId.startsWith("D") ? "Slack DM" : "Slack channel";
+const SOURCE_LABELS: Record<string, string> = { gmail: "Gmail", outlook: "Outlook", instagram: "Instagram DM", whatsapp: "WhatsApp", sms: "SMS", mock: "Injected fixture" };
+
+/** Slack tells DMs (D…) from channels (C…/G…, bot mode) by the channel id; every other provider by name. */
+export function messageSourceLabel(source: MessageDetailResponse["message"]["source"] | string, externalChannelId = ""): string {
+  if (source === "slack") return externalChannelId.startsWith("D") ? "Slack DM" : externalChannelId ? "Slack channel" : "Slack";
+  return SOURCE_LABELS[source] ?? source;
 }

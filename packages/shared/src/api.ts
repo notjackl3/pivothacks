@@ -12,6 +12,8 @@ export type MessageListItem = {
   hasVideo: boolean;
   replyStatus: ReplyDraftStatus | null;
   receivedAt: string;
+  /** Inbound channel: slack, gmail, outlook, instagram, whatsapp, sms, mock. */
+  source: string;
   /** Pivot 03 */
   deliveryMode: DeliveryMode | null;
   deliverAfter: string | null;

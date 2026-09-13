@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getComposioSources, getIntegrations, getPreferences, getTrackedEntities } from "@/lib/api";
 import { useResource } from "@/lib/hooks";
@@ -31,6 +31,7 @@ export function SetupView() {
   const slack = integrations.data?.slack ?? null;
   const telegram = integrations.data?.telegram ?? null;
   const trackedEntities = tracked.data?.entities ?? null;
+  const currentTracked = useMemo(() => trackedEntities?.find((entity) => entity.enabled) ?? null, [trackedEntities]);
 
   const handlePrefsSaved = useCallback(() => {
     void prefs.refresh();
@@ -50,6 +51,12 @@ export function SetupView() {
       detail: telegram?.connected ? "Ready for delivery" : "One-time pairing code",
     },
     {
+      key: "sender",
+      label: slack?.mode === "bot_token" ? "Track a channel" : "Track a sender",
+      state: currentTracked ? "done" : "todo",
+      detail: currentTracked ? `${currentTracked.displayName} · ${currentTracked.relationship}` : "Who, and who they are to you",
+    },
+    {
       key: "language",
       label: "Choose language",
       state: prefs.data ? "done" : "todo",
@@ -62,7 +69,7 @@ export function SetupView() {
   return (
     <AppShell
       title="Setup"
-      description="Connect your inboxes once. ReelRelay watches authorized incoming messages and delivers each reel through Telegram."
+      description="Connect your inboxes once. ReelRelay triages every incoming message by urgency, deadline, quiet hours and sender, then delivers the reel through Telegram."
       actions={
         <LinkButton href="/history" variant="secondary">
           View history
@@ -102,7 +109,7 @@ export function SetupView() {
         </div>
 
         <p className="rr-rise px-1 text-xs leading-5 text-ink-faint" style={{ animationDelay: "320ms" }}>
-          Privacy: only messages delivered by the inbox triggers you enable are stored. Message text is processed by Anthropic
+          Privacy: only messages delivered by the inbox triggers you enable are stored. Message text is processed by an AI model
           (interpretation and drafts) and ElevenLabs (narration). Provider credentials remain with Composio; Telegram delivery uses a server-only bot token.
         </p>
       </div>

@@ -7,7 +7,7 @@ import type { MessageListItem } from "@reelrelay/shared";
 import { listMessages } from "@/lib/api";
 import { useInterval, useNow, useResource } from "@/lib/hooks";
 import { formatAbsoluteTime, formatRelativeTime } from "@/lib/format";
-import { anyJobActive, deliveryModeMeta, jobStatusMeta, replyStatusMeta, urgencyMeta } from "@/lib/status";
+import { anyJobActive, deliveryModeMeta, jobStatusMeta, messageSourceLabel, replyStatusMeta, urgencyMeta } from "@/lib/status";
 import { AppShell } from "@/components/AppShell";
 import { Button, Chip, EmptyState, ErrorBanner, FullPageSpinner, LinkButton, MockBadge } from "@/components/ui";
 
@@ -128,6 +128,7 @@ function DesktopTable({ items, now }: { items: MessageListItem[]; now: number })
                       {item.sender}
                     </Link>
                     {item.isMock && <MockBadge className="ml-2 align-middle" />}
+                    <p className="mt-0.5 text-[11px] uppercase tracking-[0.1em] text-ink-faint">{messageSourceLabel(item.source)}</p>
                   </td>
                   <td className="max-w-[360px] px-3 py-4 align-middle">
                     <p className="truncate text-ink-muted" title={item.preview}>
@@ -207,6 +208,7 @@ function MobileList({ items, now }: { items: MessageListItem[]; now: number }) {
                     {item.sender}
                     {item.isMock && <MockBadge className="ml-2 align-middle" />}
                   </p>
+                  <p className="text-[11px] uppercase tracking-[0.1em] text-ink-faint">{messageSourceLabel(item.source)}</p>
                   <p className="mt-1 line-clamp-2 text-sm text-ink-muted">{item.preview}</p>
                 </div>
                 <span className="shrink-0 text-xs text-ink-faint">

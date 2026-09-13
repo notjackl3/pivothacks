@@ -30,7 +30,7 @@ export async function registerMessageRoutes(app: FastifyInstance): Promise<void>
     const items: MessageListItem[] = messages.map((message) => {
       const artifact = artifactMap.get(message.id);
       const job = jobMap.get(message.id);
-      return { id: message.id, sender: message.sender_display_name, preview: message.original_text.slice(0, 180), urgency: artifact?.interpretation_json.urgency ?? null, jobStatus: job?.status ?? "queued", isMock: message.is_mock, hasVideo: Boolean(artifact?.video_path), replyStatus: (drafts.data?.find((row) => row.message_id === message.id)?.status as MessageListItem["replyStatus"]) ?? null, receivedAt: message.received_at, deliveryMode: job?.delivery_plan?.mode ?? null, deliverAfter: job?.deliver_after ?? null, reasonText: job?.delivery_plan?.reasonText ?? null };
+      return { id: message.id, sender: message.sender_display_name, preview: message.original_text.slice(0, 180), urgency: artifact?.interpretation_json.urgency ?? null, jobStatus: job?.status ?? "queued", isMock: message.is_mock, hasVideo: Boolean(artifact?.video_path), replyStatus: (drafts.data?.find((row) => row.message_id === message.id)?.status as MessageListItem["replyStatus"]) ?? null, receivedAt: message.received_at, source: message.source_provider ?? (message.is_mock ? "mock" : "slack"), deliveryMode: job?.delivery_plan?.mode ?? null, deliverAfter: job?.deliver_after ?? null, reasonText: job?.delivery_plan?.reasonText ?? null };
     });
     return { items };
   });
