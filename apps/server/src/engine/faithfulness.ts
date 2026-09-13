@@ -1,10 +1,10 @@
 import type { MessageInterpretation } from "@reelrelay/shared";
+import { localizedTimeText, localizedWeekdays, negationFor } from "./languageRules.js";
 
 export type FaithfulnessIssue = { check: "A1" | "A2" | "A3" | "A4" | "A5"; message: string; actionIndex?: number };
 const normalize = (text: string) => text.normalize("NFKC").replace(/\s+/gu, " ").trim().toLowerCase();
 const compact = (text: string) => normalize(text).replace(/[\s\p{P}\p{S}]/gu, "");
 const sourceNegation = /\b(?:do not|don't|never|no longer|must not)\b/i;
-const chineseNegation = /不要|不得|勿|请勿|不能|不再|绝不/;
 const weekdays: Record<string, string[]> = {
   monday: ["monday", "周一", "星期一"], tuesday: ["tuesday", "周二", "星期二"],
   wednesday: ["wednesday", "周三", "星期三"], thursday: ["thursday", "周四", "星期四"],
@@ -14,10 +14,10 @@ const weekdays: Record<string, string[]> = {
 const knownPlatforms = ["Quercus", "Slack", "GitHub", "PDF", "ZIP", "ID", "RSVP"];
 
 type TimeToken = { hour: number; minute: number; period: "am" | "pm" | null; raw: string };
-function times(text: string): TimeToken[] {
+function times(text: string, language?: string): TimeToken[] {
   const result: TimeToken[] = [];
   const pattern = /(?:(凌晨|早上|上午|中午|下午|傍晚|晚上)\s*)?(\d{1,2})(?::(\d{2}))\s*(AM|PM)?|\b(\d{1,2})\s*(AM|PM)\b/giu;
-  for (const match of text.normalize("NFKC").matchAll(pattern)) {
+  for (const match of localizedTimeText(text.normalize("NFKC"), language).matchAll(pattern)) {
     const hour = Number(match[2] ?? match[5]);
     const minute = Number(match[3] ?? 0);
     if (hour > 23 || minute > 59) continue;
@@ -31,9 +31,9 @@ function times(text: string): TimeToken[] {
 function hour24(time: TimeToken): number {
   return time.period ? time.hour % 12 + (time.period === "pm" ? 12 : 0) : time.hour;
 }
-export function containsTime(text: string, source: string): boolean {
+export function containsTime(text: string, source: string, language?: string): boolean {
   const expected = times(source);
-  const present = times(text);
+  const present = times(text, language);
   return expected.every((item) => present.some((candidate) => {
     if (candidate.minute !== item.minute) return false;
     // A translated explicit AM/PM must agree. A 24-hour form is also accepted.
@@ -42,14 +42,15 @@ export function containsTime(text: string, source: string): boolean {
     return hour24(item) === hour24(candidate);
   }));
 }
-function dueCovered(due: string, narration: string): boolean {
+function dueCovered(due: string, narration: string, language: string): boolean {
   const normalized = normalize(narration);
-  if (!containsTime(narration, due)) return false;
+  if (!containsTime(narration, due, language)) return false;
   let recognized = times(due).length > 0;
-  for (const [day, variants] of Object.entries(weekdays)) {
+  const localized = localizedWeekdays(language);
+  for (const [index, [day, variants]] of Object.entries(weekdays).entries()) {
     if (!normalize(due).includes(day)) continue;
     recognized = true;
-    if (!variants.some((variant) => normalized.includes(variant))) return false;
+    if (![...variants, ...(localized[index] ?? [])].some((variant) => compact(normalized).includes(compact(variant)))) return false;
   }
   const date = /\b\d{4}-\d{2}-\d{2}\b/g;
   for (const match of due.matchAll(date)) {
@@ -69,7 +70,7 @@ function anchors(english: string): string[] {
 export function checkFaithfulness(original: string, interpretation: MessageInterpretation): FaithfulnessIssue[] {
   const issues: FaithfulnessIssue[] = [];
   const normalizedOriginal = normalize(original);
-  const narration = interpretation.spokenSegments.join("");
+  const narration = interpretation.spokenSegments.join(/^(zh|ja)(-|$)/i.test(interpretation.targetLanguage) ? "" : " ");
   const narrationCompact = compact(narration);
   const facts = [interpretation.faithfulTranslation, ...interpretation.preservedFacts.map((fact) => fact.value)].join("\n");
 
@@ -82,12 +83,12 @@ export function checkFaithfulness(original: string, interpretation: MessageInter
     if (action.dueText && !normalizedOriginal.includes(normalize(action.dueText))) issues.push({ check: "A1", actionIndex, message: "dueText must be copied from the original message." });
     if (action.dueAt && (!action.dueText || !/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(action.dueAt) || Number.isNaN(Date.parse(action.dueAt)))) issues.push({ check: "A1", actionIndex, message: "dueAt needs a valid timestamp with timezone and supporting dueText, or null." });
     if (!action.essential) return;
-    if (action.dueText && !dueCovered(action.dueText, narration)) issues.push({ check: "A2", actionIndex, message: `Narration must include this item's deadline: ${action.dueText}` });
+    if (action.dueText && !dueCovered(action.dueText, narration, interpretation.targetLanguage)) issues.push({ check: "A2", actionIndex, message: `Narration must include this item's deadline: ${action.dueText}` });
     const tokens = anchors(action.textEnglish);
     if (tokens.length && !tokens.every((token) => narrationCompact.includes(compact(token)))) issues.push({ check: "A2", actionIndex, message: `Narration is missing action anchors: ${tokens.join(", ")}` });
     if (!tokens.length && !action.dueText && !narrationCompact.includes(compact(action.text))) issues.push({ check: "A2", actionIndex, message: "Narrate this essential item's target-language text verbatim, splitting it across captions if necessary." });
     if (action.isNegation) {
-      const negation = interpretation.targetLanguage.startsWith("zh") ? chineseNegation : sourceNegation;
+      const negation = negationFor(interpretation.targetLanguage);
       if (!negation.test(narration) || !negation.test(action.text)) issues.push({ check: "A2", actionIndex, message: "Preserve the negation in both the action text and narration." });
       // A generic 'do not' elsewhere is not enough to preserve this specific prohibition.
       if (!narrationCompact.includes(compact(action.text))) issues.push({ check: "A2", actionIndex, message: "Narrate the complete negated action verbatim, including its object." });
@@ -101,7 +102,7 @@ export function checkFaithfulness(original: string, interpretation: MessageInter
     }
   }
   for (const time of times(original)) {
-    if (!normalize(facts).includes(normalize(time.raw)) && !containsTime(facts, time.raw)) issues.push({ check: "A4", message: `Missing or changed time: ${time.raw}` });
+    if (!normalize(facts).includes(normalize(time.raw)) && !containsTime(facts, time.raw, interpretation.targetLanguage)) issues.push({ check: "A4", message: `Missing or changed time: ${time.raw}` });
   }
   const urls = original.match(/https?:\/\/[^\s<>]+/g)?.map((url) => url.replace(/[.,;!?]+$/, "")) ?? [];
   const amounts = original.match(/(?:[$£€¥]\s*\d[\d,]*(?:\.\d{2})?|\b(?:USD|CAD|EUR|GBP)\s*\d[\d,]*(?:\.\d{2})?)/g) ?? [];

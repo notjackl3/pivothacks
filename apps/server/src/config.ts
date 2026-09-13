@@ -39,6 +39,9 @@ const EnvSchema = z.object({
   COMPOSIO_TRIGGER_CONFIGS: z.string().default("{}"),
   COMPOSIO_API_BASE_URL: z.string().url().default("https://backend.composio.dev"),
   ANTHROPIC_API_KEY: optionalString,
+  OPENAI_API_KEY: optionalString,
+  OPENAI_MODEL: z.string().default("gpt-5-mini"),
+  ENGINE_PROVIDER: z.enum(["auto", "anthropic", "openai"]).default("auto"),
   ANTHROPIC_MODEL: z.string().default("claude-opus-5"),
   ANTHROPIC_EFFORT: z.enum(["low", "medium"]).default("medium"),
   ELEVENLABS_API_KEY: optionalString,
@@ -56,7 +59,14 @@ const EnvSchema = z.object({
   /** Pivot 03 demo: fixed clock (ISO) for the triage router and the held-job scheduler. POST /api/demo/clock overrides at runtime. */
   DEMO_NOW: z.preprocess((v) => v === "" ? undefined : v, z.string().datetime({ offset: true }).optional()),
 });
-export const config = EnvSchema.parse(process.env);
+// Accept the generic names used by the demo setup as well as provider-specific keys.
+const legacyProvider = process.env.LLM_PROVIDER?.toLowerCase();
+export const config = EnvSchema.parse({
+  ...process.env,
+  ENGINE_PROVIDER: process.env.ENGINE_PROVIDER || legacyProvider,
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY || (legacyProvider === "openai" ? process.env.LLM_API_KEY : undefined),
+  ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || (legacyProvider === "anthropic" ? process.env.LLM_API_KEY : undefined),
+});
 export const dataDir = path.resolve(repoRoot, config.DATA_DIR);
 export function requireConfig<K extends keyof typeof config>(key: K): NonNullable<(typeof config)[K]> {
   const value = config[key];

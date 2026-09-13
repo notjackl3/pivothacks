@@ -22,6 +22,7 @@ export async function prepareRenderer(): Promise<string> {
       const publicDir = path.join(repoRoot, "packages/reel/public");
       await access(path.join(publicDir, "fonts/NotoSansSC-Bold.ttf"));
       await access(path.join(publicDir, "fonts/NotoSans-Bold.ttf"));
+      await access(path.join(publicDir, "fonts/NotoSansKR-Bold.ttf"));
       await Promise.all(Object.values(gameplays).map((clip) => access(path.join(publicDir, clip.file))));
       return bundle({ entryPoint: path.join(repoRoot, "packages/reel/src/index.ts"), rootDir: path.join(repoRoot, "packages/reel"), publicDir, outDir: path.join(dataDir, "bundle"), enableCaching: true, webpackOverride: (current) => ({ ...current, resolve: { ...current.resolve, extensionAlias: { ...current.resolve?.extensionAlias, ".js": [".ts", ".tsx", ".js"] } } }) });
     })().catch((error: unknown) => { bundlePromise = undefined; throw error; });

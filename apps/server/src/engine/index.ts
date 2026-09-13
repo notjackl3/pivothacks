@@ -2,10 +2,16 @@ import type { ComprehensionEngine, NormalizedMessage, UserPreferences } from "@r
 import { config } from "../config.js";
 import { ClaudeEngine } from "./ClaudeEngine.js";
 import { StubEngine } from "./StubEngine.js";
+import { createOpenAITransport } from "./openai.js";
+
+export function selectedEngineProvider(): "anthropic" | "openai" {
+  return config.ENGINE_PROVIDER === "auto" ? config.OPENAI_API_KEY ? "openai" : "anthropic" : config.ENGINE_PROVIDER;
+}
 
 let engine: ComprehensionEngine | undefined;
 export function getEngine(): ComprehensionEngine {
-  return engine ??= config.ENGINE_MODE === "stub" ? new StubEngine() : new ClaudeEngine();
+  return engine ??= config.ENGINE_MODE === "stub" ? new StubEngine()
+    : selectedEngineProvider() === "openai" ? new ClaudeEngine({ transport: createOpenAITransport(), effort: "low" }) : new ClaudeEngine();
 }
 export async function analyzeShorter(message: NormalizedMessage, prefs: UserPreferences) {
   const current = getEngine();

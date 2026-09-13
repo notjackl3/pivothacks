@@ -7,8 +7,10 @@ await mkdir(directory, { recursive: true });
 const files = [
   ["NotoSansSC-Bold.ttf", "https://raw.githubusercontent.com/google/fonts/main/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf"],
   ["NotoSans-Bold.ttf", "https://raw.githubusercontent.com/google/fonts/main/ofl/notosans/NotoSans%5Bwdth,wght%5D.ttf"],
+  ["NotoSansKR-Bold.ttf", "https://raw.githubusercontent.com/google/fonts/main/ofl/notosanskr/NotoSansKR%5Bwght%5D.ttf"],
   ["OFL-NotoSansSC.txt", "https://raw.githubusercontent.com/google/fonts/main/ofl/notosanssc/OFL.txt"],
   ["OFL-NotoSans.txt", "https://raw.githubusercontent.com/google/fonts/main/ofl/notosans/OFL.txt"],
+  ["OFL-NotoSansKR.txt", "https://raw.githubusercontent.com/google/fonts/main/ofl/notosanskr/OFL.txt"],
 ];
 for (const [name, url] of files) {
   const target = path.join(directory, name);

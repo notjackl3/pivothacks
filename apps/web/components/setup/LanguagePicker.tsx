@@ -58,7 +58,7 @@ export function LanguagePicker({ prefs, loading, onSaved, index = 0 }: LanguageP
     );
 
   return (
-    <Card eyebrow="Step 4" title="Language & tone" description="The reel is narrated and captioned in this language; replies are drafted in English from what you type." action={statusChip} index={index}>
+    <Card eyebrow="Step 4" title="Language & tone" description="Reels use your language with English captions alongside it. Replies are drafted in English from what you type." action={statusChip} index={index}>
       <div className="space-y-4">
         {save.kind === "error" && (
           <Banner tone="danger" onDismiss={() => setSave({ kind: "idle" })}>
@@ -76,7 +76,7 @@ export function LanguagePicker({ prefs, loading, onSaved, index = 0 }: LanguageP
               ))}
               {!knownLanguage && <option value={language}>{language} (custom)</option>}
             </Select>
-            <p className="text-xs text-ink-faint">Simplified Chinese is the tested demo language; the others run through the same pipeline untested.</p>
+            <p className="text-xs text-ink-faint">Choose the language for narration and primary captions.</p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor={`${ids}-tone`}>Reply tone</Label>

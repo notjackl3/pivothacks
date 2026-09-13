@@ -83,20 +83,19 @@ export const RENDER_MODE_NOTE: Record<RenderMode, string | null> = {
 export interface LanguageOption {
   value: string;
   label: string;
-  tested: boolean;
 }
 
 export const LANGUAGE_OPTIONS: LanguageOption[] = [
-  { value: "zh-CN", label: "Simplified Chinese — tested", tested: true },
-  { value: "vi", label: "Vietnamese (untested)", tested: false },
-  { value: "ko", label: "Korean (untested)", tested: false },
-  { value: "es", label: "Spanish (untested)", tested: false },
-  { value: "fr", label: "French (untested)", tested: false },
+  { value: "zh-CN", label: "Simplified Chinese" },
+  { value: "vi", label: "Vietnamese" },
+  { value: "ko", label: "Korean" },
+  { value: "es", label: "Spanish" },
+  { value: "fr", label: "French" },
 ];
 
 export function languageLabel(value: string | null | undefined): string {
   if (!value) return "—";
-  return LANGUAGE_OPTIONS.find((option) => option.value === value)?.label.replace(/ — tested| \(untested\)/, "") ?? value;
+  return LANGUAGE_OPTIONS.find((option) => option.value === value)?.label ?? value;
 }
 
 export const TONE_OPTIONS: { value: ReplyTone; label: string }[] = [
