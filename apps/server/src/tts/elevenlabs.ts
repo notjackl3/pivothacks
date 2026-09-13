@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { MessageInterpretation } from "@reelrelay/shared";
 import { config, dataDir } from "../config.js";
 import { alignedTiming, captionsOnlyTiming, spokenText } from "./timing.js";
+import { defaultVoiceId } from "./voices.js";
 
 const runFile = promisify(execFile);
 const AlignmentSchema = z.object({ characters: z.array(z.string()), character_start_times_seconds: z.array(z.number()), character_end_times_seconds: z.array(z.number()) });
@@ -19,10 +20,10 @@ export async function audioDurationMs(file: string): Promise<number> {
 }
 export async function synthesizeSpeech(interp: MessageInterpretation, messageId: string, options: { fetch?: typeof fetch; apiKey?: string; voiceId?: string; outputDir?: string; probe?: typeof audioDurationMs } = {}): Promise<SpeechResult> {
   const apiKey = options.apiKey ?? config.ELEVENLABS_API_KEY;
-  const voiceId = options.voiceId ?? config.ELEVENLABS_VOICE_ID;
   const fallback = (reason: string): SpeechResult => ({ ...captionsOnlyTiming(interp.spokenSegments), audioPath: null, mode: "captions_only", reason });
-  if (!apiKey || !voiceId) return fallback("TTS_NOT_CONFIGURED");
+  if (!apiKey) return fallback("TTS_NOT_CONFIGURED");
   try {
+    const voiceId = options.voiceId ?? config.ELEVENLABS_VOICE_ID ?? await defaultVoiceId(apiKey, options.fetch ?? fetch);
     const response = await (options.fetch ?? fetch)(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps?output_format=mp3_44100_128`, {
       method: "POST", headers: { "xi-api-key": apiKey, "Content-Type": "application/json" },
       body: JSON.stringify({ text: spokenText(interp), model_id: config.ELEVENLABS_MODEL_ID }), signal: AbortSignal.timeout(45000),
@@ -39,7 +40,8 @@ export async function synthesizeSpeech(interp: MessageInterpretation, messageId:
     await writeFile(audioPath, audio);
     const actualMs = await (options.probe ?? audioDurationMs)(audioPath);
     return { ...alignedTiming(interp.spokenSegments, body.alignment, actualMs), audioPath, mode: "voiced" };
-  } catch {
-    return fallback("TTS_FAILED");
+  } catch (error) {
+    const code = error && typeof error === "object" && "code" in error ? String(error.code) : "";
+    return fallback(code.startsWith("TTS_VOICE_") ? code : code === "ENOENT" ? "TTS_FFPROBE_MISSING" : "TTS_FAILED");
   }
 }

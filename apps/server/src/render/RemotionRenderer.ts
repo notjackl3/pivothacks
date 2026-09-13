@@ -21,6 +21,7 @@ export async function prepareRenderer(): Promise<string> {
       const publicDir = path.join(repoRoot, "packages/reel/public");
       await access(path.join(publicDir, "fonts/NotoSansSC-Bold.ttf"));
       await access(path.join(publicDir, "fonts/NotoSans-Bold.ttf"));
+      await access(path.join(publicDir, "gameplay/subway-surfers.mp4"));
       return bundle({ entryPoint: path.join(repoRoot, "packages/reel/src/index.ts"), rootDir: path.join(repoRoot, "packages/reel"), publicDir, outDir: path.join(dataDir, "bundle"), enableCaching: true, webpackOverride: (current) => ({ ...current, resolve: { ...current.resolve, extensionAlias: { ...current.resolve?.extensionAlias, ".js": [".ts", ".tsx", ".js"] } } }) });
     })().catch((error: unknown) => { bundlePromise = undefined; throw error; });
   }
@@ -28,7 +29,7 @@ export async function prepareRenderer(): Promise<string> {
 }
 export type RenderContext = Pick<ReelArtifact, "messageId" | "senderDisplayName" | "source" | "isMock" | "originalText" | "audioPath">;
 export class RemotionRenderer implements ReelRenderer {
-  constructor(private readonly context: RenderContext) {}
+  constructor(private readonly context: RenderContext, private readonly options: { onProgress?: (progress: number) => void } = {}) {}
   async render(interp: TimedInterpretation, _prefs: UserPreferences): Promise<ReelArtifact> {
     TimedInterpretationSchema.parse(interp);
     validateCaptionTiming(interp.captionSegments, interp.narrationMs);
@@ -46,7 +47,7 @@ export class RemotionRenderer implements ReelRenderer {
       const { cancel, cancelSignal } = makeCancelSignal();
       const timer = setTimeout(cancel, config.RENDER_TIMEOUT_MS);
       try {
-        await renderMedia({ composition, serveUrl, inputProps, browserExecutable, codec: "h264", crf, audioCodec: "aac", concurrency: 2, outputLocation, timeoutInMilliseconds: config.RENDER_TIMEOUT_MS, cancelSignal, imageFormat: "jpeg", overwrite: true });
+        await renderMedia({ composition, serveUrl, inputProps, browserExecutable, codec: "h264", crf, audioCodec: "aac", concurrency: 2, outputLocation, timeoutInMilliseconds: config.RENDER_TIMEOUT_MS, cancelSignal, imageFormat: "jpeg", overwrite: true, onProgress: ({ progress }) => this.options.onProgress?.(progress) });
       } finally { clearTimeout(timer); }
       if ((await stat(outputLocation)).size <= 20 * 1024 * 1024) return { ...this.context, videoPath: outputLocation, durationMs: interp.totalMs, renderMode: this.context.audioPath ? "remotion" : "captions_only", interpretation: interp };
     }

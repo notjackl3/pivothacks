@@ -1,5 +1,27 @@
 ﻿# Dev A handoff
 
+## Video generation
+
+Run `pnpm reel:render` from the root with `ELEVENLABS_API_KEY` in `.env`.
+`ELEVENLABS_VOICE_ID` is optional; the renderer selects a stock voice otherwise.
+The command exports the synthetic Chinese demo to
+`build/demo/professor_deadline.mp4`, with a JSON artifact alongside it. Install
+`ffprobe` and Chrome/Edge before rendering on Windows.
+
+The video includes looping Subway Surfers gameplay, narration, timed phrase
+captions, all action pages, and embedded gameplay attribution. `pnpm reel:preview`
+opens the composition in Remotion Studio. `pnpm reel:render --silent` exports an
+explicitly silent preview. `pnpm reel:render --input message.json` accepts
+`{ originalText, senderDisplayName, interpretation: MessageInterpretation }`.
+See `scripts/VIDEO-GEN-PLAN.md` for the complete run instructions.
+
+The worker already calls the updated `synthesizeSpeech` → `withTiming` →
+`RemotionRenderer` path. `ReelArtifact` and the delivery contract are unchanged;
+`videoPath` is the local MP4. Local fixture exports do not establish that live
+Slack, Supabase, or Telegram delivery is working.
+
+## Existing server integration
+
 Install with `pnpm install --frozen-lockfile`. Copy `.env.example` to `.env`; set the service keys locally. Run `pnpm dev`.
 
 Dev B can replace the scaffold files at `routes/api/index.ts`, `routes/webhooks/index.ts`, `delivery/index.ts`, and `delivery/telegram/bot.ts`. Retain the calls to `registerMessageRoutes(app)` and `registerDemoRoutes(app)` in API registration.

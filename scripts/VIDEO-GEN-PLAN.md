@@ -32,7 +32,7 @@ interpretation. The video handoff stays `ReelArtifact`, including a local
 
 | Minutes | Work | Concrete result |
 | --- | --- | --- |
-| 0–5 | Confirm ElevenLabs access, choose one voice, and set `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID` locally. Check that `ffprobe` and Chrome/Edge are available. | Narration prerequisites are ready. |
+| 0–5 | Set `ELEVENLABS_API_KEY` locally; optionally pin `ELEVENLABS_VOICE_ID`. Check that `ffprobe` and Chrome/Edge are available. | Narration prerequisites are ready. |
 | 5–15 | Add `GameplayBackground.tsx` and replace the calm background in the composition. Use the local MP4, muted, covering the full frame. Loop its 1,800 frames. | Gameplay runs continuously behind the content in Studio. |
 | 15–30 | Restyle `Captions.tsx`: large white text, a strong dark outline, a small pop at each phrase boundary, and at most two readable lines. Keep the sender/title compact and make the hook visible from the first frame. | The video has the requested story format and readable captions. |
 | 30–45 | Add `scripts/render-demo.ts` that loads the existing professor interpretation, calls `synthesizeSpeech`, applies `withTiming`, and invokes `RemotionRenderer`. Mark fixture output as demo content. | A single local command drives the actual speech-to-video path. |
@@ -68,16 +68,52 @@ Use `staticFile("gameplay/subway-surfers.mp4")` as the source.
 - Verification is one actual export and playback, plus a targeted compile check
   if needed. Do not add or run test suites for this milestone.
 
-## Narration prerequisite
+## Run the implementation
 
-ElevenLabs is confirmed: the user has an API key available. Set it and one voice
-ID in the local environment before the first voiced render. The existing code
-uses `ffprobe` to measure the result.
-It falls back to silent captions when speech cannot be generated. A silent
-preview is useful for layout work, but does not complete the narrated-video
-deliverable. Confirm this prerequisite before spending time on visual polish.
+From the repository root, run `pnpm install --frozen-lockfile`, set
+`ELEVENLABS_API_KEY` in `.env`, and run:
+
+```sh
+pnpm reel:render
+```
+
+This uses the synthetic `professor_deadline` fixture and writes
+`build/demo/professor_deadline.mp4` plus a matching JSON artifact with caption
+timestamps and render timings. `ELEVENLABS_VOICE_ID` is optional: an available
+stock voice is selected automatically. `ffprobe` must be on PATH; Remotion uses
+Chrome/Edge on Windows, or its own browser elsewhere.
+
+```sh
+pnpm reel:render professor_deadline --output build/demo/pitch.mp4
+pnpm reel:render --input message.json --output build/demo/custom.mp4
+pnpm reel:render --silent
+pnpm reel:preview
+```
+
+Custom JSON must contain `originalText`, `senderDisplayName`, and an
+`interpretation` matching the shared `MessageInterpretation` schema. The script
+only renders the supplied interpretation; it does not call the translation
+engine. Local exports are labeled DEMO and need no database or messaging
+accounts. Studio opens an interactive, silent composition preview.
+
+Narrated export fails clearly if ElevenLabs or audio probing fails. `--silent`
+explicitly selects a caption-only preview without calling ElevenLabs. The
+existing worker still retains its caption-only fallback behavior.
+
+The composition now loops the downloaded gameplay, shows the hook immediately,
+and uses short, large caption phrases with timestamp-driven pop animations.
+Deadline and prohibition captions are yellow. Every action remains on the
+paged recap. Background credit is embedded in the video and documented in
+`packages/reel/public/gameplay/README.md`.
 
 ## Handoff
+
+The first narrated export completed in 168 seconds, including voice generation
+and the initial bundle. The MP4 is 32.15 seconds, 720 × 1280 at 30 fps, H.264 with
+AAC audio, and 10,137,445 bytes. Fifteen caption phrases cover the complete
+narration, and both recap pages show all four actions. Rendered intro, caption,
+action, and outro frames were inspected; audio decoding and timing were checked.
+Server and reel typechecks passed. No test suites were run.
 
 Provide the teammate with the exact render command, the exported MP4 path, the
 gameplay credit, and the final commit hash. Keep generated demo outputs and
