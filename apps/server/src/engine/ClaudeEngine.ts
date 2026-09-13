@@ -28,12 +28,18 @@ export class ClaudeEngine implements ComprehensionEngine {
     if (this.options.transport) return this.options.transport(request);
     this.client ??= new Anthropic({ apiKey: requireConfig("ANTHROPIC_API_KEY"), maxRetries: 1, timeout: 45000 });
     const base = { model: config.ANTHROPIC_MODEL, system: request.system, messages: request.messages };
-    if (request.kind === "interpretation") {
-      const result = await this.client.messages.parse({ ...base, max_tokens: 8192, output_config: { effort: request.effort, format: zodOutputFormat(MessageInterpretationSchema) } });
+    try {
+      if (request.kind === "interpretation") {
+        const result = await this.client.messages.parse({ ...base, max_tokens: 8192, output_config: { effort: request.effort, format: zodOutputFormat(MessageInterpretationSchema) } });
+        return { output: result.parsed_output, stopReason: result.stop_reason };
+      }
+      const result = await this.client.messages.parse({ ...base, max_tokens: 2048, output_config: { effort: "low", format: zodOutputFormat(ReplyDraftOutputSchema) } });
       return { output: result.parsed_output, stopReason: result.stop_reason };
+    } catch (error) {
+      // SDK-side parsing failures also use the application's one corrective retry.
+      if (error instanceof SyntaxError || (error instanceof Error && error.name === "ZodError")) return { output: null, stopReason: null };
+      throw error;
     }
-    const result = await this.client.messages.parse({ ...base, max_tokens: 2048, output_config: { effort: "low", format: zodOutputFormat(ReplyDraftOutputSchema) } });
-    return { output: result.parsed_output, stopReason: result.stop_reason };
   }
   async analyze(message: NormalizedMessage, prefs: UserPreferences): Promise<MessageInterpretation> {
     return this.analyzeWithInstruction(message, prefs);

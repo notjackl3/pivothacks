@@ -15,4 +15,6 @@ Dev B can replace the scaffold files at `routes/api/index.ts`, `routes/webhooks/
 - `ConversationContext` contains `message`, `interpretation`, `preferences`, and optional `studentName`/`previousThreadMessages`.
 - The server registers `fastify-raw-body` globally with `global:false`; opt Slack's route in using `config: {rawBody:true}`.
 
-Current scaffold: Slack/Telegram and web flows belong to Dev B. History and demo routes are still being completed by Dev A. The worker and renderer are implemented; live integration and video rendering still need verification. Typechecking passed before this handoff.
+History list/detail/retry and demo injection are now registered. Run `pnpm demo:inject professor_deadline --user <Supabase user UUID>`; the user flag can be omitted when exactly one Telegram user is paired. `pnpm smoke:e2e --user <UUID>` records three demo runs for the pitch when the integrations are connected. Injected messages do not have a real Slack reply destination.
+
+Slack/Telegram and web flows belong to Dev B. The worker and renderer are implemented; live integration still needs service keys and Dev B's connectors. Workspace typechecking, server startup (`/health` 200, unauthenticated history 401), and a rendered Chinese-caption frame passed. The renderer uses an existing Chrome/Edge installation on Windows when available and resolves the shared TypeScript modules in both Studio and server bundles.

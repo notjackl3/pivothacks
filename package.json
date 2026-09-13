@@ -1,6 +1,7 @@
 {
   "name": "reelrelay",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@10.27.0",
   "engines": {
     "node": ">=20.19"
@@ -12,7 +13,6 @@
     "test": "pnpm --filter @reelrelay/server test",
     "demo:inject": "tsx scripts/inject-demo.ts",
     "smoke:e2e": "tsx scripts/smoke-e2e.ts",
-    "smoke:pipeline": "tsx scripts/smoke-pipeline.ts",
     "reel:preview": "pnpm --filter @reelrelay/reel preview"
   },
   "devDependencies": {
