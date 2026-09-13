@@ -1,5 +1,5 @@
 // Dev B. DeliveryConnector for Telegram (PLAN.md §10, §15). Formatting helpers are pure and exported for tests.
-import { readFile } from "node:fs/promises";
+import { readFile, unlink } from "node:fs/promises";
 import type { DeliveryConnector, DeliveryPlan, MessageInterpretation, ReelArtifact, ReplyDraft } from "@reelrelay/shared";
 import { Input, type Telegraf } from "telegraf";
 import type { InlineKeyboardMarkup } from "telegraf/types";
@@ -9,6 +9,7 @@ import { getArtifact } from "../../db/queries/artifacts.js";
 import { getTelegramChatIdForUser, upsertTelegramConnection } from "../../db/queries/connections.js";
 import { consumePairingCode, upsertSession } from "../../db/queries/telegram.js";
 import { draftKeyboard, reelKeyboard, retrySendKeyboard } from "./keyboards.js";
+import { optimizeForTelegram } from "./optimize.js";
 import type { StoredMessage } from "./store.js";
 
 /** Telegram limits. */
@@ -287,6 +288,10 @@ function errorText(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+function mb(bytes: number): string {
+  return `${(bytes / 1048576).toFixed(1)} MB`;
+}
+
 /** Shared by the /start handler and pair(): consume the code, then link chat ↔ user. */
 export async function pairChat(chatId: string, pairingCode: string): Promise<{ userId: string } | null> {
   const consumed = await consumePairingCode(pairingCode);
@@ -339,12 +344,32 @@ export class TelegramDelivery implements DeliveryConnector {
     const wantsVideo = artifact.renderMode !== "text_only" && !artifact.error;
     if (!wantsVideo) return this.sendTextCard(chatId, artifact, keyboard, threading);
 
+    const caption = formatReelCaption(artifact);
+    const videoExtra = { caption, parse_mode: "HTML" as const, reply_markup: keyboard, supports_streaming: true, ...threading };
+
+    // Preferred path: hand Telegram the storage URL and let IT fetch the file. Pushing multipart bytes from a laptop
+    // stalls badly — an 8.8 MB reel (and a 3.7 MB optimized one) both sat in `delivering` for minutes and failed every
+    // retry, while the same file reached Supabase in under five seconds. Telegram's fetchers pull from Supabase
+    // directly, so this turns a multi-minute upload into one API call. Capped at 20 MB by Telegram for URL sends.
+    const storageKey = await this.storageKeyFor(artifact.messageId);
+    if (storageKey) {
+      const url = await this.signedUrl(storageKey);
+      if (url) {
+        try {
+          const sent = await this.bot.telegram.sendVideo(chatId, url, videoExtra);
+          return String(sent.message_id);
+        } catch (err) {
+          // Telegram refused to fetch it (unreachable URL, too large, transient). Fall through to the byte upload.
+          console.warn(`[telegram] reel ${artifact.messageId}: URL send failed (${errorText(err)}); uploading the bytes instead`);
+        }
+      }
+    }
+
     const video = await this.loadVideo(artifact);
     if (!video) {
       console.warn(`[telegram] video for message ${artifact.messageId} unavailable; sending the text card instead`);
       return this.sendTextCard(chatId, artifact, keyboard);
     }
-    const caption = formatReelCaption(artifact);
 
     if (video.bytes.length > TELEGRAM_UPLOAD_LIMIT_BYTES) {
       const storageKey = video.storageKey ?? (await this.storageKeyFor(artifact.messageId));
@@ -358,13 +383,7 @@ export class TelegramDelivery implements DeliveryConnector {
       return String(sent.message_id);
     }
 
-    const sent = await this.bot.telegram.sendVideo(chatId, Input.fromBuffer(video.bytes, `${artifact.messageId}.mp4`), {
-      caption,
-      parse_mode: "HTML",
-      reply_markup: keyboard,
-      supports_streaming: true,
-      ...threading,
-    });
+    const sent = await this.bot.telegram.sendVideo(chatId, Input.fromBuffer(video.bytes, `${artifact.messageId}.mp4`), videoExtra);
     return String(sent.message_id);
   }
 
@@ -460,7 +479,20 @@ export class TelegramDelivery implements DeliveryConnector {
   private async loadVideo(artifact: ReelArtifact): Promise<LoadedVideo | null> {
     if (artifact.videoPath) {
       try {
-        return { bytes: await readFile(artifact.videoPath), storageKey: null };
+        // A raw Remotion mp4 is large enough that the Bot API upload stalls; shrink it first. Never fatal: on any
+        // failure optimizeForTelegram hands back the original path.
+        const optimized = await optimizeForTelegram(artifact.videoPath);
+        if (optimized.skipped) {
+          if (optimized.skipped !== "below_threshold") {
+            console.warn(`[telegram] reel ${artifact.messageId}: optimization skipped (${optimized.skipped}); uploading ${mb(optimized.bytes)} unchanged`);
+          }
+        } else {
+          const saved = Math.round((1 - optimized.bytes / optimized.originalBytes) * 100);
+          console.log(`[telegram] reel ${artifact.messageId}: optimized ${mb(optimized.originalBytes)} -> ${mb(optimized.bytes)} (-${saved}%)`);
+        }
+        const bytes = await readFile(optimized.path);
+        if (optimized.isTemporary) await unlink(optimized.path).catch(() => undefined);
+        return { bytes, storageKey: null };
       } catch (err) {
         console.warn(`[telegram] could not read ${artifact.videoPath}: ${errorText(err)}; falling back to storage`);
       }
