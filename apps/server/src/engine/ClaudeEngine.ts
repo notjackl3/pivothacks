@@ -10,6 +10,7 @@ export type ParseRequest = {
   system: string;
   messages: Array<{ role: "user" | "assistant"; content: string }>;
   effort: "medium" | "low";
+  targetLanguage?: string;
 };
 export type ParseResult = { output: unknown; stopReason: string | null };
 export type StructuredTransport = (request: ParseRequest) => Promise<ParseResult>;
@@ -46,7 +47,7 @@ export class ClaudeEngine implements ComprehensionEngine {
   }
   async analyzeWithInstruction(message: NormalizedMessage, prefs: UserPreferences, extra?: string, context?: AnalysisContext): Promise<MessageInterpretation> {
     const started = performance.now();
-    const request: ParseRequest = { kind: "interpretation", system: interpretationSystem(message, prefs, this.options.now?.(), context), effort: this.effort, messages: [{ role: "user", content: interpretationInput(message, extra) }] };
+    const request: ParseRequest = { kind: "interpretation", targetLanguage: prefs.targetLanguage, system: interpretationSystem(message, prefs, this.options.now?.(), context), effort: this.effort, messages: [{ role: "user", content: interpretationInput(message, extra, prefs.targetLanguage) }] };
     let refusal = false;
     try {
       for (let attempt = 0; attempt < 2; attempt++) {
@@ -54,6 +55,10 @@ export class ClaudeEngine implements ComprehensionEngine {
         refusal = result.stopReason === "refusal";
         const parsed = MessageInterpretationSchema.safeParse(result.output);
         const issues = refusal ? ["The provider could not interpret this message."] : !parsed.success ? parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`) : checkFaithfulness(message.text, parsed.data).map((issue) => `${issue.check}${issue.actionIndex === undefined ? "" : ` action ${issue.actionIndex + 1}`}: ${issue.message}`);
+        if (parsed.success && !refusal) {
+          if (parsed.data.targetLanguage !== prefs.targetLanguage) issues.push(`targetLanguage must be exactly ${prefs.targetLanguage}; write the translation, narration and actions in that language.`);
+          if (!/^en(?:-|$)/i.test(prefs.targetLanguage) && parsed.data.captionTranslation?.language !== "en") issues.push("Include captionTranslation with language=en and one English translation for every narration segment.");
+        }
         if (!refusal && parsed.success && issues.length === 0 && result.stopReason !== "max_tokens") return parsed.data;
         request.messages.push({ role: "assistant", content: JSON.stringify(result.output ?? {}) }, { role: "user", content: `Your previous output failed these checks:\n${issues.join("\n")}\nReturn a complete corrected object only. Do not change source facts.` });
       }

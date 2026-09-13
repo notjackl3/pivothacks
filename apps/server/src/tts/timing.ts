@@ -10,7 +10,7 @@ export type CharacterAlignment = {
 const whitespace = /\s/u;
 const clean = (text: string) => text.normalize("NFKC").replace(/\s/gu, "");
 export function spokenText(interp: MessageInterpretation): string {
-  return interp.spokenSegments.join(/^(zh|ja|ko)(-|$)/i.test(interp.targetLanguage) ? "" : " ");
+  return interp.spokenSegments.join(/^(zh|ja)(-|$)/i.test(interp.targetLanguage) ? "" : " ");
 }
 export function alignedTiming(segments: string[], alignment: CharacterAlignment, audioDurationMs?: number): { narrationMs: number; captionSegments: CaptionSegment[] } {
   const { characters, character_start_times_seconds: starts, character_end_times_seconds: ends } = alignment;

@@ -12,6 +12,10 @@ const runFile = promisify(execFile);
 const AlignmentSchema = z.object({ characters: z.array(z.string()), character_start_times_seconds: z.array(z.number()), character_end_times_seconds: z.array(z.number()) });
 const SpeechSchema = z.object({ audio_base64: z.string().min(1), alignment: AlignmentSchema.nullable().optional() });
 export type SpeechResult = ReturnType<typeof captionsOnlyTiming> & { audioPath: string | null; mode: "voiced" | "captions_only"; reason?: string };
+export function speechModelForLanguage(language: string, configuredModel = config.ELEVENLABS_MODEL_ID): string {
+  // Multilingual v2 has no Vietnamese support; Flash v2.5 includes Vietnamese.
+  return /^vi(?:-|$)/i.test(language) && configuredModel === "eleven_multilingual_v2" ? "eleven_flash_v2_5" : configuredModel;
+}
 export async function audioDurationMs(file: string): Promise<number> {
   const { stdout } = await runFile("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", file], { timeout: 10000, windowsHide: true });
   const duration = Number(stdout.trim()) * 1000;
@@ -24,9 +28,10 @@ export async function synthesizeSpeech(interp: MessageInterpretation, messageId:
   if (!apiKey) return fallback("TTS_NOT_CONFIGURED");
   try {
     const voiceId = options.voiceId ?? config.ELEVENLABS_VOICE_ID ?? await defaultVoiceId(apiKey, options.fetch ?? fetch);
+    const modelId = speechModelForLanguage(interp.targetLanguage);
     const response = await (options.fetch ?? fetch)(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps?output_format=mp3_44100_128`, {
       method: "POST", headers: { "xi-api-key": apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ text: spokenText(interp), model_id: config.ELEVENLABS_MODEL_ID }), signal: AbortSignal.timeout(45000),
+      body: JSON.stringify({ text: spokenText(interp), model_id: modelId, ...(modelId === "eleven_multilingual_v2" ? {} : { language_code: interp.targetLanguage.split(/[-_]/)[0]?.toLowerCase() }) }), signal: AbortSignal.timeout(45000),
     });
     if (!response.ok) return fallback(`TTS_HTTP_${response.status}`);
     const body = SpeechSchema.parse(await response.json());

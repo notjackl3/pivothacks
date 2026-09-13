@@ -13,7 +13,7 @@ pnpm workspace + Turbo. Node ≥ 20.19, pnpm 10.
 
 | Package | What | Runs on |
 | --- | --- | --- |
-| `apps/server` | Fastify API, Slack + Telegram connectors, Claude engine, ElevenLabs TTS, Remotion render worker, triage scheduler | :4000 |
+| `apps/server` | Fastify API, Slack + Telegram connectors, OpenAI/Claude engine, ElevenLabs TTS, Remotion render worker, triage scheduler | :4000 |
 | `apps/web` | Next.js app: login (Supabase magic link), Setup, History | :3000 |
 | `packages/shared` | zod contracts shared by both | – |
 | `packages/reel` | Remotion composition for the 720x1280 reel | – |
@@ -25,6 +25,7 @@ pnpm workspace + Turbo. Node ≥ 20.19, pnpm 10.
 pnpm install --frozen-lockfile
 pnpm dev                         # web :3000 + server :4000 (log must show "worker: ready" and "scheduler: watching held jobs")
 pnpm typecheck                   # all packages
+pnpm exec tsx scripts/check-languages.ts --live # real translation, reply drafts, narration and MP4s for all five languages
 pnpm test                        # server unit tests (vitest)
 pnpm telegram:check              # validate TELEGRAM_BOT_TOKEN, register /start /help   (see TELEGRAM-SETUP.md)
 pnpm demo:inject professor_deadline            # inject a fixture as the paired user (needs DEMO_INJECT_SECRET)
@@ -40,12 +41,20 @@ secrets, ElevenLabs. Still needed per developer:
 | Key | Where to get it | Needed for |
 | --- | --- | --- |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` | @BotFather → `/newbot` | delivery to the phone |
-| `ANTHROPIC_API_KEY` | console.anthropic.com | interpretation + reply drafts (`ENGINE_MODE=stub` uses fixtures instead) |
+| `OPENAI_API_KEY` | platform.openai.com | interpretation + reply drafts; defaults to `gpt-5-mini` (`OPENAI_MODEL` overrides) |
+| `ANTHROPIC_API_KEY` | console.anthropic.com | optional alternative; select with `ENGINE_PROVIDER=anthropic` |
 | `SLACK_CLIENT_ID/SECRET/SIGNING_SECRET` | Slack app (scopes in `DEV-B-HANDOFF.md`), needs ngrok | real Slack messages; skip for the injected demo |
 | `DEMO_NOW` | optional ISO instant | freeze the triage clock for a stage demo |
 
 Hosted Supabase project: `mcdacwrcompwsxtrskog` (Canada Central). Auth redirect allow-list already includes
 `http://localhost:3000/auth/callback`.
+
+`ENGINE_PROVIDER=auto` selects OpenAI when its key is configured, otherwise Anthropic.
+The existing demo names `LLM_PROVIDER=openai` and `LLM_API_KEY` are accepted too.
+`ENGINE_MODE=stub` explicitly uses fixtures instead of a live model. Vietnamese
+narration automatically uses Eleven Flash v2.5 when the configured default is
+Multilingual v2, which does not support Vietnamese. Korean captions use bundled
+Noto Sans KR. See `fixtures/languages/README.md` for language verification details.
 
 ## Working conventions
 

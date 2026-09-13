@@ -9,6 +9,7 @@ import type { GameplayId } from "./gameplays.js";
 if (typeof document !== "undefined") {
   void loadFont({ family: "Reel Noto SC", url: staticFile("fonts/NotoSansSC-Bold.ttf"), weight: "700" });
   void loadFont({ family: "Reel Noto", url: staticFile("fonts/NotoSans-Bold.ttf"), weight: "700" });
+  void loadFont({ family: "Reel Noto KR", url: staticFile("fonts/NotoSansKR-Bold.ttf"), weight: "700" });
 }
 export function RemotionRoot() {
   const variants: Array<{ id: string; background: GameplayId }> = [

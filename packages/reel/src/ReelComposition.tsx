@@ -22,7 +22,8 @@ export function ReelComposition({ interpretation, senderDisplayName, source, isM
   const hookOpacity = interpolate(ms, [0, HOOK_MS - 220, HOOK_MS], [1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const progress = Math.min(1, Math.max(0, (ms - BODY_START_MS) / interpretation.narrationMs));
 
-  return <AbsoluteFill style={{ fontFamily: '"Reel Noto SC", "Reel Noto", sans-serif', fontWeight: 700, color: "white" }}>
+  const fontFamily = interpretation.targetLanguage.startsWith("ko") ? '"Reel Noto KR", "Reel Noto", sans-serif' : '"Reel Noto SC", "Reel Noto", "Reel Noto KR", sans-serif';
+  return <AbsoluteFill style={{ fontFamily, fontWeight: 700, color: "white" }}>
     <GameplayBackground background={gameplay.id} />
     <div style={{ width: 720, height: 1280, position: "absolute", transformOrigin: "top left", transform: "scale(" + width / 720 + ", " + height / 1280 + ")" }}>
       <Chip sender={senderDisplayName} source={source} urgency={interpretation.urgency} isMock={isMock} targetLanguage={interpretation.targetLanguage} />
